@@ -1,0 +1,1 @@
+# Wrapper für pyautogui/pynput (Bewegung, Klick, Glättung)
