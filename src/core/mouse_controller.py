@@ -1,68 +1,92 @@
-import numpy as np
-
-try:
-    import pyautogui
-    HAS_PYAUTOGUI = True
-    pyautogui.FAILSAFE = False
-    pyautogui.PAUSE = 0
-except Exception:
-    HAS_PYAUTOGUI = False
-
+"""Maussteuerungs-Logik"""
+import pyautogui
+from utils.math_helpers import MovementSmoother, clamp
 
 class MouseController:
-    """
-    - Mapping Nase->Screen
-    - enable/disable Computersteuerung
-    - Mode: HEAD oder EYE (EYE später)
-    """
+    """Steuert Maus basierend auf Kopfbewegungen"""
+    def __init__(self, config):
+        self.config = config
 
-    def __init__(self, cfg: dict):
-        self.cfg = cfg
-        self.control_enabled = bool(cfg["control"].get("enabled", True))
-        self.mode = cfg["control"].get("mode", "HEAD")
+        # PyAutoGUI Einstellungen aus Config
+        pyautogui.FAILSAFE = config.get('mouse.failsafe', True)
+        pyautogui.PAUSE = config.get('mouse.pause_duration', 0.001)
 
-        self.screen_w, self.screen_h = (0, 0)
-        if HAS_PYAUTOGUI:
-            self.screen_w, self.screen_h = pyautogui.size()
+        self.screen_w, self.screen_h = pyautogui.size()
+        self.sensitivity_x = config.get('mouse.sensitivity_x', 2.5)
+        self.sensitivity_y = config.get('mouse.sensitivity_y', 2.5)
+        self.movement_threshold = config.get('mouse.movement_threshold', 0.002)
+        self.invert_x = config.get('mouse.invert_x', False)
+        self.invert_y = config.get('mouse.invert_y', False)
 
-        self.prev_x = self.screen_w // 2
-        self.prev_y = self.screen_h // 2
+        # Kalibrierung
+        self.reference_position = None
+        self.calibrated = False
 
-    def set_enabled(self, enabled: bool):
-        self.control_enabled = bool(enabled)
+        # Bewegungsglättung
+        smoothing_size = config.get('mouse.smoothing_buffer_size', 5)
+        self.smoother = MovementSmoother(smoothing_size)
 
-    def set_mode(self, mode: str):
-        self.mode = mode
+    def set_reference_position(self, x, y):
+        """Setzt Referenzposition für Kalibrierung"""
+        self.reference_position = (x, y)
+        self.calibrated = True
+        self.smoother.clear()
 
-    def compute_mouse_position_head(self, nose_px: tuple[int, int], frame_w: int, frame_h: int) -> tuple[float, float]:
-        if not HAS_PYAUTOGUI:
-            return (0.0, 0.0)
+    def reset_calibration(self):
+        """Setzt Kalibrierung zurück"""
+        self.reference_position = None
+        self.calibrated = False
+        self.smoother.clear()
 
-        nose_x, nose_y = nose_px
-        offset_x = nose_x - (frame_w // 2)
-        offset_y = nose_y - (frame_h // 2)
+    def move_mouse(self, current_x, current_y):
+        """Bewegt Maus basierend auf Kopfposition"""
+        if not self.calibrated or self.reference_position is None:
+            return False
 
-        sens_x = self.cfg["control"]["sensitivity_x"]
-        sens_y = self.cfg["control"]["sensitivity_y"]
-        smoothing = self.cfg["control"]["smoothing"]
-        gain = self.cfg["control"]["gain"]
+        # Relative Bewegung zur Referenz
+        delta_x = current_x - self.reference_position[0]
+        delta_y = current_y - self.reference_position[1]
 
-        mapped_x = (self.screen_w // 2) + (offset_x * sens_x * (self.screen_w / frame_w) * gain)
-        mapped_y = (self.screen_h // 2) + (offset_y * sens_y * (self.screen_h / frame_h) * gain)
+        # Invertierung anwenden
+        if self.invert_x:
+            delta_x = -delta_x
+        if self.invert_y:
+            delta_y = -delta_y
 
-        mapped_x = float(np.clip(mapped_x, 0, self.screen_w))
-        mapped_y = float(np.clip(mapped_y, 0, self.screen_h))
+        # Bewegungsschwelle prüfen
+        if abs(delta_x) < self.movement_threshold and abs(delta_y) < self.movement_threshold:
+            return False
 
-        curr_x = self.prev_x + (mapped_x - self.prev_x) * smoothing
-        curr_y = self.prev_y + (mapped_y - self.prev_y) * smoothing
+        # Glättung anwenden
+        self.smoother.add_point(delta_x, delta_y)
+        smooth_x, smooth_y = self.smoother.get_smoothed()
 
-        self.prev_x, self.prev_y = curr_x, curr_y
-        return curr_x, curr_y
+        # Mausposition berechnen (invertierte Y-Achse für natürliche Bewegung)
+        mouse_x = self.screen_w / 2 + smooth_x * self.screen_w * self.sensitivity_x
+        mouse_y = self.screen_h / 2 + smooth_y * self.screen_h * self.sensitivity_y
 
-    def move(self, x: float, y: float):
-        if self.control_enabled and HAS_PYAUTOGUI:
-            pyautogui.moveTo(x, y)
+        # Bildschirmgrenzen beachten
+        mouse_x = clamp(mouse_x, 0, self.screen_w - 1)
+        mouse_y = clamp(mouse_y, 0, self.screen_h - 1)
 
-    def left_click(self):
-        if self.control_enabled and HAS_PYAUTOGUI:
-            pyautogui.click()
+        # Maus bewegen
+        pyautogui.moveTo(mouse_x, mouse_y)
+        return True
+
+    def click(self):
+        """Führt Mausklick aus"""
+        pyautogui.click()
+
+    def get_delta(self, current_x, current_y):
+        """Gibt Delta zur Referenzposition zurück"""
+        if not self.calibrated or self.reference_position is None:
+            return 0, 0
+        return (current_x - self.reference_position[0], 
+                current_y - self.reference_position[1])
+
+    def update_sensitivity(self, sensitivity_x=None, sensitivity_y=None):
+        """Aktualisiert Empfindlichkeit"""
+        if sensitivity_x is not None:
+            self.sensitivity_x = sensitivity_x
+        if sensitivity_y is not None:
+            self.sensitivity_y = sensitivity_y

@@ -1,153 +1,72 @@
+"""MediaPipe Face Mesh Tracking Engine"""
 import cv2
 import mediapipe as mp
-import numpy as np
-from dataclasses import dataclass
-
-
-@dataclass
-class TrackResult:
-    has_face: bool
-    frame_w: int
-    frame_h: int
-
-    # Nase in Pixel-Koordinaten (für Mouse Mapping + Debug)
-    nose_px: tuple[int, int] | None = None
-
-    # Augen-Landmarks (normiert 0..1) für Blink
-    left_eye_top: tuple[float, float] | None = None
-    left_eye_bottom: tuple[float, float] | None = None
-    right_eye_top: tuple[float, float] | None = None
-    right_eye_bottom: tuple[float, float] | None = None
-    
-    landmarks: list | None = None
-
-    # Debug
-    eye_dist: float | None = None
-
 
 class TrackerEngine:
-    """
-    Verantwortlich für:
-    - Webcam-Frame lesen
-    - FaceMesh-Landmarks bestimmen
-    - relevante Punkte extrahieren (Nase + Auge)
-    - Debug Rendering + Window Handling
-    """
+    """Verwaltet MediaPipe Face Mesh Tracking"""
+    def __init__(self, config):
+        self.config = config
+        self.mp_face_mesh = mp.solutions.face_mesh
+        self.face_mesh = self.mp_face_mesh.FaceMesh(
+            max_num_faces=config.get('tracking.max_num_faces', 1),
+            refine_landmarks=config.get('tracking.refine_landmarks', True),
+            min_detection_confidence=config.get('tracking.min_detection_confidence', 0.5),
+            min_tracking_confidence=config.get('tracking.min_tracking_confidence', 0.5),
+            static_image_mode=config.get('tracking.static_image_mode', False)
+        )
+        self.mp_drawing = mp.solutions.drawing_utils
+        self.current_landmarks = None
 
-    def __init__(self, cfg: dict):
-        self.cfg = cfg
-
-        mp_face_mesh = mp.solutions.face_mesh
-        self.face_mesh = mp_face_mesh.FaceMesh(
-            max_num_faces=1,
-            refine_landmarks=True,
-            min_detection_confidence=cfg["tracking"]["min_detection_confidence"],
-            min_tracking_confidence=cfg["tracking"]["min_tracking_confidence"],
+        # Farbe für Landmarks aus Config
+        landmark_color = config.get('colors.landmarks', [0, 255, 0])
+        self.landmark_drawing_spec = self.mp_drawing.DrawingSpec(
+            color=tuple(landmark_color), 
+            thickness=1
         )
 
-    def read_frame(self, cap):
-        ok, frame = cap.read()
-        if not ok:
-            return None
+    def process_frame(self, frame):
+        """Verarbeitet Frame und extrahiert Face Landmarks"""
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = self.face_mesh.process(rgb_frame)
 
-        # Spiegeln damit links auch links ist
-        if self.cfg["camera"]["flip"]:
-            frame = cv2.flip(frame, 1)
+        if results.multi_face_landmarks:
+            self.current_landmarks = results.multi_face_landmarks[0].landmark
+            return True, results.multi_face_landmarks[0]
 
-        self._last_frame = frame
-        return frame
+        self.current_landmarks = None
+        return False, None
 
-    def process(self, frame) -> TrackResult:
-        h, w, _ = frame.shape
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = self.face_mesh.process(rgb)
+    def get_landmark_position(self, landmark_index):
+        """Gibt Position eines spezifischen Landmarks zurück"""
+        if self.current_landmarks and 0 <= landmark_index < len(self.current_landmarks):
+            landmark = self.current_landmarks[landmark_index]
+            return landmark.x, landmark.y, landmark.z
+        return None
 
-        track = TrackResult(has_face=False, frame_w=w, frame_h=h)
+    def get_nose_tip(self):
+        """Gibt Nasenspitzen-Position zurück (Landmark 1)"""
+        return self.get_landmark_position(1)
 
-        if not results.multi_face_landmarks:
-            return track
+    def get_upper_lip(self):
+        """Gibt obere Lippen-Position zurück (Landmark 13)"""
+        return self.get_landmark_position(13)
 
-        lm = results.multi_face_landmarks[0].landmark
-        track.landmarks = lm 
-        track.has_face = True
+    def get_lower_lip(self):
+        """Gibt untere Lippen-Position zurück (Landmark 14)"""
+        return self.get_landmark_position(14)
 
-        # Nose (dein Skript: 4)
-        nose = lm[4]
-        track.nose_px = (int(nose.x * w), int(nose.y * h))
-
-        # Left eye top/bottom
-        lt = lm[159]
-        lb = lm[145]
-        track.left_eye_top = (lt.x, lt.y)
-        track.left_eye_bottom = (lb.x, lb.y)
-
-        # Right eye top/bottom (MediaPipe FaceMesh)
-        # Häufig stabile Punkte: 386 (oben), 374 (unten)
-        rt = lm[386]
-        rb = lm[374]
-        track.right_eye_top = (rt.x, rt.y)
-        track.right_eye_bottom = (rb.x, rb.y)
-
-        return track
-
-    def draw_debug(self, frame, track: TrackResult, gestures) -> np.ndarray:
-        if not self.cfg["ui"]["debug_overlay"]:
-            return frame
-
-        out = frame
-
-        # Nase + Zentrum
-        if track.has_face and track.nose_px:
-            nx, ny = track.nose_px
-            cv2.circle(out, (nx, ny), 5, (0, 255, 255), -1)
-            cv2.circle(out, (track.frame_w // 2, track.frame_h // 2), 3, (200, 200, 200), -1)
-
-        # Eye dist text (von GestureRecognizer berechnet)
-        if gestures.last_eye_dist is not None:
-            cv2.putText(
-                out,
-                f"Eye: {gestures.last_eye_dist:.3f}",
-                (30, 50),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.8,
-                (0, 255, 0),
-                2,
+    def draw_landmarks(self, frame, face_landmarks):
+        """Zeichnet Face Mesh auf Frame"""
+        if face_landmarks:
+            self.mp_drawing.draw_landmarks(
+                frame,
+                face_landmarks,
+                self.mp_face_mesh.FACEMESH_CONTOURS,
+                landmark_drawing_spec=None,
+                connection_drawing_spec=self.landmark_drawing_spec
             )
 
-        # Click Feedback
-        if gestures.last_event == "LEFT_CLICK":
-            cv2.putText(
-                out,
-                "CLICK!",
-                (30, 100),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                2,
-                (0, 0, 255),
-                3,
-            )
-
-        return out
-
-    def show(self, frame):
-        cv2.imshow(self.window_name, frame)
-
-    def should_quit(self) -> bool:
-        return (cv2.waitKey(1) & 0xFF) == 27
-
-    def release(self, cap):
-        try:
-            cap.release()
-        except Exception:
-            pass
-        cv2.destroyAllWindows()
-        try:
-            self.face_mesh.close()
-        except Exception:
-            pass
-        
-        
     def close(self):
-        try:
+        """Gibt Ressourcen frei"""
+        if self.face_mesh:
             self.face_mesh.close()
-        except Exception:
-            pass

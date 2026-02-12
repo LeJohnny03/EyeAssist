@@ -1,89 +1,142 @@
-import math
-import time
-from .tracker_engine import TrackResult
-
+"""Erweiterte Gesten-Erkennung mit konfigurierbaren Aktionen"""
+import pyautogui
 
 class GestureRecognizer:
-    """
-    - Linkes Auge blinzeln -> LEFT_CLICK
-    - Beide Augen X Sekunden geschlossen -> STOP_CONTROL
-    """
+    """Erkennt verschiedene Gesichts-Gesten und führt Aktionen aus"""
+    def __init__(self, config):
+        self.config = config
+        self.gesture_states = {}
+        self.cooldowns = {}
 
-    def __init__(self, cfg: dict):
-        self.cfg = cfg
+        # Lade Gesten-Konfiguration
+        self.gesture_actions = config.get_section('gesture_actions')
+        self.load_gestures()
 
-        # Blink (links)
-        self.cooldown = 0
-        self.blink_detected = False
+    def load_gestures(self):
+        """Lädt Gesten-Konfiguration"""
+        for gesture_name, settings in self.gesture_actions.items():
+            self.gesture_states[gesture_name] = False
+            self.cooldowns[gesture_name] = 0
 
-        # Both-eyes close hold
-        self._both_closed_since = None
+    def update_cooldowns(self):
+        """Update alle Cooldowns"""
+        for gesture in self.cooldowns:
+            if self.cooldowns[gesture] > 0:
+                self.cooldowns[gesture] -= 1
 
-        # Debug
-        self.last_left_eye_dist = None
-        self.last_right_eye_dist = None
-        self.last_event = None
+    def detect_mouth_open(self, upper_lip, lower_lip):
+        """Erkennt Mundöffnung"""
+        if upper_lip is None or lower_lip is None:
+            return 0.0
+        return abs(upper_lip[1] - lower_lip[1])
 
-    def update(self, track: TrackResult) -> str | None:
-        self.last_event = None
+    def detect_smile(self, left_mouth, right_mouth):
+        """Erkennt Lächeln (Mundwinkel nach oben)"""
+        if left_mouth is None or right_mouth is None:
+            return 0.0
+        # Vereinfachte Smile-Detection
+        return abs(left_mouth[1] - right_mouth[1])
 
-        if not track.has_face:
-            self._both_closed_since = None
-            self.last_left_eye_dist = None
-            self.last_right_eye_dist = None
-            return None
+    def detect_head_tilt(self, nose_tip, reference_nose):
+        """Erkennt Kopfneigung links/rechts"""
+        if nose_tip is None or reference_nose is None:
+            return 0.0
+        return nose_tip[0] - reference_nose[0]
 
-        # ---- Eye distances (normalized) ----
-        if track.left_eye_top and track.left_eye_bottom:
-            self.last_left_eye_dist = math.dist(track.left_eye_top, track.left_eye_bottom)
+    def process_gestures(self, landmarks_data):
+        """
+        Verarbeitet alle Gesten und führt Aktionen aus
+        landmarks_data: dict mit allen relevanten Landmark-Positionen
+        """
+        self.update_cooldowns()
+        detected_actions = []
+
+        # Mundöffnung
+        if 'mouth_open' in self.gesture_actions and self.gesture_actions['mouth_open']['enabled']:
+            mouth_opening = self.detect_mouth_open(
+                landmarks_data.get('upper_lip'),
+                landmarks_data.get('lower_lip')
+            )
+            if self._check_gesture_trigger('mouth_open', mouth_opening):
+                detected_actions.append(self.gesture_actions['mouth_open']['action'])
+
+        # Sehr weite Mundöffnung
+        if 'mouth_wide_open' in self.gesture_actions and self.gesture_actions['mouth_wide_open']['enabled']:
+            mouth_opening = self.detect_mouth_open(
+                landmarks_data.get('upper_lip'),
+                landmarks_data.get('lower_lip')
+            )
+            if self._check_gesture_trigger('mouth_wide_open', mouth_opening):
+                detected_actions.append(self.gesture_actions['mouth_wide_open']['action'])
+
+        # Kopfneigung links
+        if 'head_tilt_left' in self.gesture_actions and self.gesture_actions['head_tilt_left']['enabled']:
+            tilt = self.detect_head_tilt(
+                landmarks_data.get('nose_tip'),
+                landmarks_data.get('reference_nose')
+            )
+            if tilt < 0 and self._check_gesture_trigger('head_tilt_left', abs(tilt)):
+                detected_actions.append(self.gesture_actions['head_tilt_left']['action'])
+
+        # Kopfneigung rechts
+        if 'head_tilt_right' in self.gesture_actions and self.gesture_actions['head_tilt_right']['enabled']:
+            tilt = self.detect_head_tilt(
+                landmarks_data.get('nose_tip'),
+                landmarks_data.get('reference_nose')
+            )
+            if tilt > 0 and self._check_gesture_trigger('head_tilt_right', abs(tilt)):
+                detected_actions.append(self.gesture_actions['head_tilt_right']['action'])
+
+        # Führe Aktionen aus
+        for action in detected_actions:
+            self.execute_action(action)
+
+        return detected_actions
+
+    def _check_gesture_trigger(self, gesture_name, value):
+        """Prüft ob Geste ausgelöst werden soll"""
+        settings = self.gesture_actions[gesture_name]
+        threshold = settings['threshold']
+        cooldown_frames = settings['cooldown_frames']
+
+        if value > threshold and self.cooldowns[gesture_name] == 0:
+            if not self.gesture_states[gesture_name]:
+                self.gesture_states[gesture_name] = True
+                self.cooldowns[gesture_name] = cooldown_frames
+                return True
         else:
-            self.last_left_eye_dist = None
+            self.gesture_states[gesture_name] = False
 
-        if track.right_eye_top and track.right_eye_bottom:
-            self.last_right_eye_dist = math.dist(track.right_eye_top, track.right_eye_bottom)
-        else:
-            self.last_right_eye_dist = None
+        return False
 
-        # ---- 1) Both eyes closed -> STOP_CONTROL ----
-        both_thr = self.cfg["gestures"]["both_eyes_threshold"]
-        hold_s = self.cfg["gestures"]["both_eyes_close_seconds"]
+    def execute_action(self, action):
+        """Führt konfigurierte Aktion aus"""
+        if action == 'left_click':
+            pyautogui.click()
+        elif action == 'right_click':
+            pyautogui.rightClick()
+        elif action == 'double_click':
+            pyautogui.doubleClick()
+        elif action == 'middle_click':
+            pyautogui.middleClick()
+        elif action == 'scroll_up':
+            pyautogui.scroll(1)
+        elif action == 'scroll_down':
+            pyautogui.scroll(-1)
+        elif action == 'drag_toggle':
+            # Toggle drag mode
+            pass  # TODO: Implementiere Drag-Modus
+        elif action.startswith('key_'):
+            key = action.replace('key_', '')
+            pyautogui.press(key)
 
-        both_available = (self.last_left_eye_dist is not None) and (self.last_right_eye_dist is not None)
-        both_closed = both_available and (self.last_left_eye_dist < both_thr) and (self.last_right_eye_dist < both_thr)
+    def reset(self):
+        """Setzt alle Gesten zurück"""
+        for gesture in self.gesture_states:
+            self.gesture_states[gesture] = False
+            self.cooldowns[gesture] = 0
 
-        now = time.time()
-        if both_closed:
-            if self._both_closed_since is None:
-                self._both_closed_since = now
-            else:
-                if (now - self._both_closed_since) >= hold_s:
-                    # Event feuern und resetten, damit es nicht dauer-spammt
-                    self._both_closed_since = None
-                    self.last_event = "STOP_CONTROL"
-                    return "STOP_CONTROL"
-        else:
-            self._both_closed_since = None
-
-        # ---- 2) Left blink -> click ----
-        # (nur wenn beide Augen Geste nicht gerade getriggert hat)
-        if self.last_left_eye_dist is None:
-            return None
-
-        thr = self.cfg["blink"]["threshold"]
-        hysteresis = self.cfg["blink"]["hysteresis"]
-        cooldown_frames = self.cfg["blink"]["cooldown_frames"]
-
-        if self.cooldown > 0:
-            self.cooldown -= 1
-
-        if self.last_left_eye_dist < thr and self.cooldown == 0:
-            if not self.blink_detected:
-                self.blink_detected = True
-                self.cooldown = cooldown_frames
-                self.last_event = "LEFT_CLICK"
-                return "LEFT_CLICK"
-        else:
-            if self.last_left_eye_dist > (thr + hysteresis):
-                self.blink_detected = False
-
-        return None
+    def reload_config(self):
+        """Lädt Konfiguration neu"""
+        self.gesture_actions = self.config.get_section('gesture_actions')
+        self.load_gestures()
