@@ -1,0 +1,32 @@
+{
+  "camera": {
+    "index": 0,
+    "flip": true
+  },
+  "tracking": {
+    "min_detection_confidence": 0.5,
+    "min_tracking_confidence": 0.5
+  },
+  "control": {
+    "sensitivity_x": 2.0,
+    "sensitivity_y": 2.0,
+    "smoothing": 0.3,
+    "gain": 3.0,
+    "enabled": false,
+    "mode": "HEAD"
+  },
+  "blink": {
+    "threshold": 0.014,
+    "cooldown_frames": 15,
+    "hysteresis": 0.005
+  },
+  "gestures": {
+    "both_eyes_close_seconds": 1.0,
+    "both_eyes_threshold": 0.012
+  },
+  "ui": {
+    "window_name": "Head Mouse",
+    "debug_overlay": true,
+    "show_landmarks": false
+  }
+}
