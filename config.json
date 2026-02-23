@@ -1,0 +1,153 @@
+{
+    "camera": {
+        "camera_id": 0,
+        "width": 640,
+        "height": 480,
+        "flip_horizontal": true,
+        "fps_target": 30
+    },
+    "tracking": {
+        "max_num_faces": 1,
+        "refine_landmarks": true,
+        "min_detection_confidence": 0.5,
+        "min_tracking_confidence": 0.5,
+        "static_image_mode": false
+    },
+    "calibration": {
+        "frames_required": 30,
+        "auto_recalibrate_on_face_lost": false,
+        "show_progress_bar": true,
+        "calibration_delay_ms": 0
+    },
+    "mouse": {
+        "sensitivity_x": 5.0,
+        "sensitivity_y": 6.0,
+        "movement_threshold": 0.002,
+        "smoothing_buffer_size": 5,
+        "invert_x": false,
+        "invert_y": false,
+        "failsafe": false,
+        "pause_duration": 0.001
+    },
+    "gesture_actions": {
+        "mouth_open": {
+            "enabled": true,
+            "action": "left_click",
+            "threshold": 0.03,
+            "cooldown_frames": 15
+        },
+        "mouth_wide_open": {
+            "enabled": false,
+            "action": "left_click",
+            "threshold": 0.05,
+            "cooldown_frames": 15
+        },
+        "smile": {
+            "enabled": true,
+            "action": "right_click",
+            "threshold": 0.02,
+            "cooldown_frames": 20
+        },
+        "eyebrow_raise": {
+            "enabled": false,
+            "action": "scroll_up",
+            "threshold": 0.03,
+            "cooldown_frames": 5
+        },
+        "head_tilt_left": {
+            "enabled": true,
+            "action": "scroll_down",
+            "threshold": 0.05,
+            "cooldown_frames": 10
+        },
+        "head_tilt_right": {
+            "enabled": true,
+            "action": "scroll_up",
+            "threshold": 0.05,
+            "cooldown_frames": 10
+        }
+    },
+    "available_actions": [
+        "left_click",
+        "right_click",
+        "double_click",
+        "middle_click",
+        "scroll_up",
+        "scroll_down",
+        "drag_toggle",
+        "key_enter",
+        "key_space",
+        "key_escape",
+        "key_left",
+        "key_right",
+        "key_up",
+        "key_down",
+        "disabled"
+    ],
+    "gui": {
+        "window_name": "Head Tracking Mouse Control",
+        "show_preview_window": true,
+        "preview_width": 640,
+        "preview_height": 480,
+        "show_debug_info": true,
+        "show_landmarks": true,
+        "show_fps": true,
+        "show_controls_hint": true,
+        "theme": "light"
+    },
+    "colors": {
+        "calibrating": [
+            0,
+            255,
+            255
+        ],
+        "calibrated": [
+            0,
+            255,
+            0
+        ],
+        "error": [
+            0,
+            0,
+            255
+        ],
+        "landmarks": [
+            0,
+            255,
+            0
+        ],
+        "click_indicator": [
+            0,
+            0,
+            255
+        ],
+        "text": [
+            255,
+            255,
+            255
+        ],
+        "progress_bar_bg": [
+            50,
+            50,
+            50
+        ],
+        "progress_bar_fg": [
+            0,
+            255,
+            255
+        ]
+    },
+    "hotkeys": {
+        "toggle_tracking": "F9",
+        "recalibrate": "F10",
+        "toggle_preview": "F11",
+        "exit": "F12"
+    },
+    "general": {
+        "start_minimized": false,
+        "minimize_to_tray": true,
+        "show_notifications": true,
+        "autostart_tracking": false,
+        "language": "de"
+    }
+}
