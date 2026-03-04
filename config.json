@@ -27,7 +27,11 @@
         "invert_x": false,
         "invert_y": false,
         "failsafe": false,
-        "pause_duration": 0.001
+        "pause_duration": 0.001,
+        "min_cutoff": 1.0,
+        "beta": 0.007,
+        "d_cutoff": 1.0,
+        "pixel_deadzone": 5
     },
     "gesture_actions": {
         "mouth_open": {

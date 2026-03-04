@@ -31,6 +31,8 @@ class MouseController:
         beta       = config.get('mouse.beta', 0.007)
         d_cutoff   = config.get('mouse.d_cutoff', 1.0)
         self.smoother = OneEuroFilter2D(mincutoff=min_cutoff, beta=beta, dcutoff=d_cutoff)
+        # Pixel-Deadzone: Cursor bewegt sich nur, wenn Ziel > N px entfernt ist
+        self.pixel_deadzone = config.get('mouse.pixel_deadzone', 4)
 
     def set_reference_position(self, x, y):
         """Setzt Referenzposition für Kalibrierung"""
@@ -74,6 +76,14 @@ class MouseController:
         # Bildschirmgrenzen beachten
         mouse_x = clamp(mouse_x, 0, self.screen_w - 1)
         mouse_y = clamp(mouse_y, 0, self.screen_h - 1)
+        
+        # Pixel-Deadzone: aktuelle Mausposition mit Zielposition vergleichen
+        current_mouse_x, current_mouse_y = pyautogui.position()
+        dist = ((mouse_x - current_mouse_x) ** 2 + (mouse_y - current_mouse_y) ** 2) ** 0.5
+        
+        # Zu kleine Bewegungen ignorieren
+        if dist < self.pixel_deadzone:
+            return False 
 
         # Maus bewegen
         pyautogui.moveTo(mouse_x, mouse_y)

@@ -42,7 +42,11 @@ class ConfigManager:
                 'invert_x': False,
                 'invert_y': False,
                 'failsafe': False,
-                'pause_duration': 0.001
+                'pause_duration': 0.001,
+                'min_cutoff': 1.0,
+                'beta': 0.007,
+                'd_cutoff': 1.0,
+                'pixel_deadzone': 5
             },
 
             # === Gesten-Mapping ===
@@ -154,7 +158,10 @@ class ConfigManager:
             try:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     loaded_config = json.load(f)
-                    return self._deep_merge(self.default_config, loaded_config)
+                    merged = self._deep_merge(self.default_config, loaded_config)
+                    self.config = merged
+                    self.save_config() 
+                    return merged
             except Exception as e:
                 print(f"Fehler beim Laden der Config: {e}")
                 return self._deep_copy(self.default_config)
