@@ -46,7 +46,8 @@ class ConfigManager:
                 'min_cutoff': 1.0,
                 'beta': 0.007,
                 'd_cutoff': 1.0,
-                'pixel_deadzone': 5
+                'pixel_deadzone': 5,
+                'max_angle': 30.0
             },
 
             # === Gesten-Mapping ===

@@ -18,6 +18,8 @@ class MouseController:
         self.invert_x = config.get('mouse.invert_x', False)
         self.invert_y = config.get('mouse.invert_y', False)
 
+        self.max_angle = config.get('mouse.max_angle', 30.0)
+
         # Kalibrierung
         self.reference_position = None
         self.calibrated = False
@@ -45,9 +47,43 @@ class MouseController:
         self.reference_position = None
         self.calibrated = False
         self.smoother.clear()
-
+        
     def move_mouse(self, current_x, current_y):
-        """Bewegt Maus basierend auf Kopfposition"""
+        """Bewegt Maus – current_x = yaw, current_y = pitch (in Grad)"""
+        if not self.calibrated or self.reference_position is None:
+            return False
+
+        # Winkel-Delta normalisiert auf [-1, 1]
+        delta_x = (current_x - self.reference_position[0]) / self.max_angle
+        delta_y = (current_y - self.reference_position[1]) / self.max_angle
+
+        if self.invert_x:
+            delta_x = -delta_x
+        if self.invert_y:
+            delta_y = -delta_y
+
+        if abs(delta_x) < self.movement_threshold and abs(delta_y) < self.movement_threshold:
+            return False
+
+        self.smoother.add_point(delta_x, delta_y)
+        smooth_x, smooth_y = self.smoother.get_smoothed()
+
+        mouse_x = self.screen_w / 2 + smooth_x * self.screen_w * self.sensitivity_x
+        mouse_y = self.screen_h / 2 + smooth_y * self.screen_h * self.sensitivity_y
+
+        mouse_x = clamp(mouse_x, 0, self.screen_w - 1)
+        mouse_y = clamp(mouse_y, 0, self.screen_h - 1)
+
+        cur_mx, cur_my = pyautogui.position()
+        dist = ((mouse_x - cur_mx) ** 2 + (mouse_y - cur_my) ** 2) ** 0.5
+        if dist < self.pixel_deadzone:
+            return False
+
+        pyautogui.moveTo(mouse_x, mouse_y)
+        return True
+
+    """def move_mouse(self, current_x, current_y):
+        # Bewegt Maus basierend auf Kopfposition
         if not self.calibrated or self.reference_position is None:
             return False
 
@@ -88,6 +124,7 @@ class MouseController:
         # Maus bewegen
         pyautogui.moveTo(mouse_x, mouse_y)
         return True
+        """
 
     def click(self):
         """Führt Mausklick aus"""
