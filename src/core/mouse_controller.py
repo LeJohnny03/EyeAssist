@@ -1,6 +1,6 @@
 """Maussteuerungs-Logik"""
 import pyautogui
-from utils.math_helpers import MovementSmoother, clamp
+from utils.math_helpers import MovementSmoother, clamp, OneEuroFilter2D
 
 class MouseController:
     """Steuert Maus basierend auf Kopfbewegungen"""
@@ -22,9 +22,15 @@ class MouseController:
         self.reference_position = None
         self.calibrated = False
 
-        # Bewegungsglättung
-        smoothing_size = config.get('mouse.smoothing_buffer_size', 5)
-        self.smoother = MovementSmoother(smoothing_size)
+        # Moving Average Bewegungsglättung
+        # smoothing_size = config.get('mouse.smoothing_buffer_size', 5)
+        # self.smoother = MovementSmoother(smoothing_size)
+        
+        # 1€-Filter Bewegungsglättung
+        min_cutoff = config.get('mouse.min_cutoff', 1.0)
+        beta       = config.get('mouse.beta', 0.007)
+        d_cutoff   = config.get('mouse.d_cutoff', 1.0)
+        self.smoother = OneEuroFilter2D(mincutoff=min_cutoff, beta=beta, dcutoff=d_cutoff)
 
     def set_reference_position(self, x, y):
         """Setzt Referenzposition für Kalibrierung"""
