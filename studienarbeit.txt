@@ -1,0 +1,649 @@
+#import "@preview/clean-dhbw:0.3.1": *
+#import "glossary.typ": glossary-entries
+
+#show: clean-dhbw.with(
+  title: "Eignung von Eye-Tracking mit Laptop-/Consumer-Webcams für eine barrierefreie PC-Steuerung",
+  authors: (
+    (name: "Jonas Alexander Rumpf", student-id: "9911500", course: "TINF23AI1", course-of-studies: "Angewandte Informatik", company: (
+      (name: "Eviden Germany GmbH", post-code: "60549", city: "Frankfurt")
+    )),
+    // (name: "Juan Pérez", student-id: "1234567", course: "TIM21", course-of-studies: "Mobile Computer Science", company: (
+    //   (name: "ABC S.L.", post-code: "08005", city: "Barcelona", country: "Spain")
+    // )),
+  ),
+  type-of-thesis: "Studienarbeit",
+  at-university: false, // if true the company name on the title page and the confidentiality statement are hidden 
+  show-confidentiality-statement: false,
+  show-declaration-of-authorship: false,
+  bibliography: bibliography("sources.bib"),
+  date: datetime.today(),
+  glossary: glossary-entries, // displays the glossary terms defined in "glossary.typ"
+  language: "de", // en, de
+  supervisor: (university: "Prof. Dr. Eckard Kruse"),
+  university: "Duale Hochschule Baden-Württemberg",
+  university-location: "Mannheim",
+  university-short: "DHBW",
+  // for more options check the package documentation (https://typst.app/universe/package/clean-dhbw)
+)
+
+#pagebreak()
+#page[
+  #align(center)[
+    #text(size: 20pt, weight: "bold")[Author's Declaration]
+    #v(1cm)
+    #text()[Ich versichere hiermit, dass ich die vorliegende Arbeit mit dem Titel „Eignung von Eye-Tracking mit Laptop-/Consumer-Webcams für eine barrierefreie PC-Steuerung“ selbstständig verfasst und keine anderen als die angegebenen Quellen und Hilfsmittel benutzt habe. Zur Unterstützung bei der Quellensuche, Formulierung, Grammatik und Rechtschreibung habe ich Chat-GPT, Perplexity Lab und Google Gemini, als generative Sprachmodelle, verwendet. Ich versichere zudem, dass die eingereichte elektronische Fassung mit der gedruckten Fassung übereinstimmt.\*]
+    #linebreak()
+    #text(style: "italic", size: 8pt)[\*Falls beide Fassungen gefordert sind]
+    #linebreak()
+  ]
+  #v(1cm)
+  #table(
+  columns: (1fr, 6cm),
+  gutter: 1cm,
+  [
+    #text(size: 10pt)[Ort, Datum:]
+  ],
+  [
+    #text(size: 10pt)[Unterschrift:]
+  ],
+  )
+  #align(right)[Jonas Alexander Rumpf]
+]
+
+// Edit this content to your liking
+
+//TODO: 1-Euro-Filter testen. finite impulse response (FIR) testen.
+
+= Einleitung
+
+== Motivation
+
+Digitale Endgeräte sind heute zentrale Werkzeuge für Bildung, Arbeit, soziales Engagement und Freizeitgestaltung. Für Menschen mit motorischen Einschränkungen ist die klassische Bedienung über Tastatur und Maus jedoch häufig nur eingeschränkt oder gar nicht möglich, sodass alternative Eingabekonzepte erforderlich sind. Spezialisierte Eye-Tracking-Systeme ermöglichen in solchen Fällen eine weitgehend barrierefreie PC-Steuerung, sind jedoch oftmals kostspielig und setzen proprietäre Hardware, etwa infrarotbasierte Sensorleisten, voraus. Diese Systeme bieten zwar hohe Präzision und Robustheit, erfordern aber zusätzliche Geräte, eine spezifische Montage und teilweise komplexe Anpassungsprozesse.
+
+Parallel dazu existiert ein wachsender Markt für softwarebasierte Lösungen, die Standard-Webcams als Sensorquelle nutzen, um entweder den Blick oder die Kopfbewegung der Nutzenden auszuwerten. Solche Ansätze sind prinzipiell attraktiv, da Consumer-Webcams in Laptops, externen Kameras oder sogar Smartphones weit verbreitet und damit leicht verfügbar sind. Erste Anwendungen demonstrieren, dass auf dieser Basis sowohl Eye-Tracking als auch Head-Tracking zur Mensch-Computer-Interaktion einsetzbar sind, wobei insbesondere für Gaming und einfache Steueraufgaben bereits praxistaugliche Lösungen existieren. Im Bereich der barrierefreien PC-Steuerung stellt sich jedoch die Frage, ob diese kostengünstigen, kamerabasierten Verfahren hinsichtlich Präzision, Jitter, Latenz und ergonomischer Nutzbarkeit mit etablierter Spezialhardware konkurrieren können.
+
+== Zielsetzung und Forschungsfrage
+
+Vor diesem Hintergrund verfolgt die Arbeit das Ziel, die praktische Eignung von Eye-Tracking mit bezahlbaren Standardkameras – insbesondere Laptop- und Consumer-Webcams – für eine barrierefreie PC-Steuerung systematisch zu untersuchen. Im Fokus steht dabei nicht der theoretisch erreichbare Genauigkeitsgrenzwert unter Laborbedingungen, sondern die Nutzbarkeit unter realistischen Rahmenbedingungen, also typischer Beleuchtung, üblichen Abständen zwischen Nutzenden und Bildschirm sowie praxisnahen Kalibrierungsprozessen. Zentral ist die Frage, ob eine ausschließliche Blicksteuerung des Mauszeigers genügend Präzision bietet, um Alltagsaufgaben am PC mit akzeptablem Bedienkomfort auszuführen, ohne dass übermäßiger Jitter, Drift oder Latenz zu einem instabilen oder ermüdenden Nutzungserlebnis führen.
+
+Die leitende Forschungsfrage der Arbeit lautet:
+„Wie geeignet ist Eye-Tracking mit bezahlbaren Standardkameras (Laptop-/Consumer-Webcams) für eine barrierefreie PC-Steuerung, und welche Kombination aus Eye-Tracking und Head-Tracking ermöglicht unter realistischen Bedingungen (Licht, Abstand, Kalibrierung) die beste Nutzbarkeit bei akzeptabler Präzision und geringem Jitter?“
+
+Zur Beantwortung dieser Frage wird analysiert, welche Grenzen Webcam-basiertes Eye-Tracking bei der kontinuierlichen Cursorsteuerung aufweist und inwieweit Head-Tracking als alternative oder ergänzende Eingabemetapher Vorteile hinsichtlich Stabilität, Präzision und Ermüdung bietet. Darüber hinaus wird untersucht, ob eine hybride Kombination – etwa Head-Tracking für die Cursorführung und Eye- oder Mimiksignale für diskrete Aktionen – einen sinnvollen Kompromiss zwischen Robustheit und barrierefreier Interaktion darstellen kann.
+
+== Vorgehen und Beitrag der Arbeit
+
+Die Arbeit geht empirisch vor, indem mehrere experimentelle Konfigurationen mit unterschiedlichen Kameras (Laptop-Webcam, externe Full-HD-Webcam, 4K-Webcam, Dual-Kamera-Setup) unter vergleichbaren Bedingungen untersucht werden. Technisch basiert der Ansatz auf einer prototypischen Implementierung in Python unter Verwendung von OpenCV zur Kamerazugriff und Bildverarbeitung sowie MediaPipe Face Mesh inklusive Iris-Landmarks zur robusten Erkennung von Gesichts- und Augenmerkmalen. Die Verarbeitungs-Pipeline umfasst dabei die Schritte von der Erfassung des Kamerastreams über die Extraktion relevanter Landmarks (Augenwinkel, Iris, Nase) bis hin zur Normalisierung und Abbildung auf Bildschirmkoordinaten, einschließlich Glättungsverfahren zur Reduktion von Jitter.
+
+Im Rahmen der Experimente werden zunächst verschiedene Eye-Tracking-Varianten mit Single- und Dual-Webcam-Setups untersucht, die auf einer diskreten Kalibrierung (z. B. 9-Punkt-Kalibrierung) und einer nachfolgenden Interpretation der Irisposition relativ zu Augenwinkeln und Kopfpose basieren. Anschließend wird ein Head-Tracking-Ansatz implementiert, bei dem ausgewählte, stabile Gesichtspunkte – insbesondere die Nasenspitze – zur Cursorsteuerung herangezogen werden. Die resultierenden Varianten werden anhand definierter Kriterien wie Präzision, Jitter, nutzbarer Bereich, Latenz und subjektivem Bediengefühl evaluiert. Der Beitrag der Arbeit liegt in der systematischen Bewertung dieser Ansätze unter Consumer-Bedingungen sowie in der begründeten Ableitung einer praktikablen hybriden Steuerungslösung.
+
+== Aufbau der Arbeit
+
+Kapitel 2 führt in die theoretischen Grundlagen ein und beschreibt die Anforderungen an barrierefreie Eingabesysteme, relevante Konzepte des Eye- und Head-Trackings sowie alternative Eye-Tracking-Technologien und deren typische Fehlerquellen. Zudem wird die Wahl der in dieser Arbeit verwendeten Technologie – Python, OpenCV und MediaPipe – gegenüber alternativen Plattformen und Hardwarelösungen abgegrenzt und begründet. Kapitel 3 beschreibt die Methodik und Implementierung im Detail, einschließlich der Verarbeitungs-Pipeline, der Kalibrierungs- und Mapping-Verfahren, der Kopfpose-Kompensation, der eingesetzten Glättungsverfahren sowie des Versuchsrahmens und der Evaluationskriterien.
+
+Kapitel 4 präsentiert die durchgeführten Experimente mit den verschiedenen Kamera- und Tracking-Konfigurationen und stellt die jeweiligen Ergebnisse sowie deren Interpretation vor. Darauf aufbauend diskutiert Kapitel 5 die Resultate im Kontext barrierefreier Interaktion, leitet die Designentscheidung zugunsten einer hybriden Lösung (Head-Tracking für Cursorbewegung, Eye-/Mimiksignale für Aktionen) her und entwickelt das Konzept einer vollständigen Anwendung inklusive Funktionsumfang, Bedienlogik und Konfigurierbarkeit. Kapitel 6 fasst die Beantwortung der Forschungsfrage und die wichtigsten Erkenntnisse zusammen und skizziert mögliche weiterführende Arbeiten, etwa die Verbesserung der Filterverfahren, UI-Assistenzmechanismen und kontinuierliche Rekalibrierungsansätze.
+
+= Grundlagen & Stand der Technik
+
+== Anforderungen an barrierefreie Eingabesysteme
+
+Barrierefreie Eingabesysteme müssen so gestaltet sein, dass sie Menschen mit unterschiedlichen Fähigkeiten zuverlässig und ohne übermäßige Belastung bedienen können. Im Kern geht es darum, dass Nutzer*innen ihre Ziele wirksam, effizient und mit Zufriedenheit erreichen können, und zwar im jeweiligen Nutzungskontext.
+
+Ein grundlegender Rahmen dafür ist die Usability-Definition aus ISO 9241, nach der ein Produkt nutzbar ist als der „extent to which a product can be used by specified users to achieve specified goals with effectiveness, efficiency and satisfaction in a specified context of use“. #cite(<noauthor_bluffers_nodate>)
+Für Eingabesysteme bedeutet das: Eine Interaktionsform (z. B. Kopf- oder Blicksteuerung) ist nicht allein dann „gut“, wenn sie technisch funktioniert, sondern wenn sie im Alltag verlässlich Ziele erreichbar macht (Effektivität), dabei wenig Zeit/Umwege verursacht (Effizienz) und subjektiv akzeptiert wird (Zufriedenheit).
+
+*Leistung, Aufwand und subjektive Akzeptanz*
+
+Für die Bewertung von Eingabegeräten betont ISO 9241 außerdem den Zusammenhang aus Leistungsfähigkeit und Belastung: Ein System gilt als nutzbar, wenn Nutzer*innen „a satisfactory level of performance“ erreichen und dabei „an acceptable level of effort and satisfaction“ aufrechterhalten können. #cite(<noauthor_bluffers_nodate>)
+Damit werden drei Anforderungen besonders zentral:
+
+- *Leistungsfähigkeit / Präzision*: Eingaben müssen stabil genug sein, um Aufgaben zuverlässig auszuführen (z. B. Zielauswahl, Klick, Drag).
+- *Akzeptabler Aufwand*: Die Bedienung darf nicht dauerhaft anstrengend sein (z. B. durch hohe Konzentration, permanente Korrekturen oder erzwungene Körperbewegungen).
+- *Zufriedenheit*: Bediengefühl, Fehlerhäufigkeit und Kontrolle beeinflussen, ob ein System tatsächlich genutzt wird.
+
+*Ergonomie und Ermüdung als Muss-Kriterium*
+
+Neben der reinen Funktionalität ist die körperliche Belastung eine zentrale Anforderung: ISO 9241 nennt „Biomechanical load“ und weist darauf hin, dass diese minimiert werden sollte. #cite(<noauthor_bluffers_nodate>)
+Für alternative Eingabemethoden ist das besonders relevant: Ein System kann präzise sein, aber dennoch ungeeignet, wenn es zum Beispiel zu schneller Ermüdung führt oder dauerhaft ungünstige Kopfhaltungen provoziert. Barrierefreie Eingabe bedeutet daher immer auch: möglichst geringe körperliche Belastung bei ausreichender Kontrollierbarkeit.
+
+*Orientierung und Rückmeldung: Zeiger auffindbar machen*
+
+Ein häufig unterschätzter Aspekt bei Pointer-basierten Eingaben ist die Orientierung auf dem Bildschirm. ISO 9241 fordert: „Platform software shall provide a mechanism to enable users to locate the pointer“. #cite(<noauthor_bluffers_nodate>)
+Gerade bei nicht-traditionellen Eingaben (Blick-/Kopfsteuerung, Switch-Scanning etc.) kann der Cursor „verloren gehen“, was zu Frustration und Fehlbedienung führt. Daraus folgt als Anforderung: visuelles Feedback und Funktionen zum Wiederfinden/Rezentrieren (z. B. „Recenter“, Cursor-Hervorhebung) sind kein Extra, sondern Teil der Nutzbarkeit.
+
+*Alternativen zu Standard-Eingaben: Tastatur und weitere Modalitäten*
+
+Barrierefreiheit verlangt außerdem, dass Interaktion nicht von einer einzigen Eingabeform abhängig ist. In der Anforderungssammlung (im Kontext WCAG/Operable) wird als Beispiel formuliert: „All functionalities are available from a keyboard“. #cite(<teixeira_understanding_2024>) 
+Das ist als Prinzip wichtig: Funktionen sollen grundsätzlich über alternative Eingabekanäle erreichbar sein – also nicht ausschließlich über Mausbewegung oder komplexe Gesten. Damit wird die Basis geschaffen, dass assistive Technologien und individuelle Anpassungen überhaupt greifen können.
+
+Ergänzend dazu betont WCAG 2.1 #cite(<noauthor_understanding_nodate>) im Bereich „Input Modalities“, dass Inhalte auch mit Eingabegeräten jenseits der Tastatur bedienbar sein sollen („…functional using input devices beyond a keyboard“) und nennt unterschiedliche Eingabemethoden wie „mouse input, touch input, keyboard input, and speech input.“. Daraus folgt als Anforderung für barrierefreie Eingabesysteme: Multimodalität und Redundanz, also mehrere Wege zum gleichen Ziel (z. B. Cursorführung + separate Auslösemechanik für Klick/Scroll).
+
+*Niedrige Präzisionsanforderungen: „Simple inputs“ statt komplexer Gesten*
+
+Ein weiterer zentraler Punkt ist, dass Interaktion nicht unnötig präzise oder gestenkomplex sein darf. WCAG 2.5.1 („Pointer Gestures“) #cite(<noauthor_understanding_nodate>) zielt darauf ab, dass Inhalte über „simple inputs“ auf einer großen Bandbreite von Zeigegeräten bedienbar bleiben. Gleichzeitig wird explizit auf Nutzer*innen verwiesen, die „…cannot perform multi-point or path-based gestures with precision.“. #cite(<noauthor_understanding_nodate>)
+Für alternative Eingabemethoden ist das besonders relevant: Wenn ein Eingabesystem (oder die UI) hohe Präzision bei kontinuierlicher Bewegung verlangt, steigen Fehlbedienungen, Korrekturbedarf und Belastung. Eine barrierefreie Anforderung ist daher: möglichst einfache, robuste Interaktionen, die auch bei begrenzter motorischer Kontrolle oder bei unruhiger Cursorführung zuverlässig funktionieren.
+
+*Konsequenz für die Anforderungsableitung und Evaluation*
+
+Schließlich ist wichtig, dass Barrierefreiheit als Anforderung frühzeitig verstanden und in die Entwicklung integriert wird: „it is important to understand users’ requirements, from the very beginning of the development process.“ #cite(<teixeira_understanding_2024>)
+Für Eingabesysteme bedeutet das: Anforderungen wie Präzision, Jitter, Ermüdung, Rückmeldung/Orientierung und alternative Modalitäten müssen nicht erst am Ende geprüft werden, sondern sollten bereits die Konzeption (z. B. Kalibrierung, Recenter, Glättung, Klickstrategie, UI-Unterstützung) bestimmen.
+
+Zusammengefasst lassen sich für barrierefreie Eingabesysteme die Kernanforderungen ableiten: 
+1. wirksame und effiziente Zielerreichung bei subjektiver Zufriedenheit 
+2. minimierte biomechanische Belastung,  
+3. Orientierung/Feedback inklusive Mechanismen zum Auffinden des Cursors,  
+4. alternative Eingabekanäle (z. B. Tastaturverfügbarkeit von Funktionen)
+5. Interaktionsdesign, das „simple inputs“ ermöglicht und keine hochpräzisen Gesten erzwingt. #cite(<noauthor_understanding_nodate>)
+
+== Grundlagen Eye-Tracking
+
+Eye-Tracking-Systeme ermöglichen eine Mensch-Computer-Interaktion bei der keine Hände benötigt werden, indem Augenbewegungen und Blickrichtung in Steuerbefehle wie Cursorbewegung und Klicks übersetzt werden. Auf konventionellen Eingabegeräten wie Maus oder Tastatur lastet dabei insbesondere für Menschen mit motorischen Einschränkungen eine hohe Zugangsbarriere, während Eye-Tracking eine intuitivere, blickbasierte Steuerung erlaubt. Mit dem Aufkommen leistungsfähiger Computer-Vision- und Deep-Learning-Methoden sowie verbreiteter Standard-Webcams sind Eye-Tracking-Systeme ohne Spezialhardware (z. B. Infrarot-Eye-Tracker) prinzipiell auch auf günstiger Verbraucherhardware realisierbar. Gleichwohl zeigen aktuelle Studien, dass solche Webcam-basierten Lösungen in Präzision und Robustheit meist hinter dedizierten Eye-Tracking-Geräten zurückbleiben und sorgfältige Modellierung von Kopfpose, Kalibrierung und Filterung erfordern. #cite(<c_real-time_2025>)
+
+Moderne, kamerabasierte Ansätze für Eye-Tracking setzen häufig bei einer Gesichts- und Landmark-Detektion an, auf deren Basis Augenregion und Pupillenlage geschätzt werden. Kartynnik et al. stellen hierfür ein neuronales Modell vor, das aus einem einzelnen #gls("RGB")-Kamerabild eine dichte Dreidimensionale-Gesichtsoberfläche mit 468 Landmark-Punkten rekonstruiert, deren Verteilung im Bereich von Augen, Mund und Brauen besonders hoch ist. Dieses Face-Mesh-Modell, das in MediaPipe Face Mesh eingesetzt wird, erlaubt die robuste Bestimmung von Augenlidern, Irisregion und globaler Kopfpose bei gleichzeitig sehr hohen Bildraten (100–1000+ #gls("FPS")) auf mobilen #gls("GPU")s. In einem typischen Pipeline-Entwurf wird der Kamerastream zunächst mit einem leichten Face-Detector zugeschnitten und normiert, anschließend sagt ein #gls("ResNet")-basiertes Netz#footnote[Eine neuronale Netzwerkarchitektur, die auf dem Konzept der Residual Learning basiert und speziell dafür entwickelt wurde, sehr tiefe Deep-Learning-Modelle effektiv zu trainieren.] die 3D-Koordinaten aller Landmark-Punkte vorher, die anschließend in das ursprüngliche Bild- beziehungsweise Kamerakoordinatensystem zurücktransformiert werden. #cite(<kartynnik_real-time_2019>), #cite(<noauthor_mediapipe_nodate>)
+
+Die eigentliche Blickschätzung kann modellbasiert, also geometrische Modelle von Auge, Hornhaut und Pupille, oder appearances-basiert, also direkte Abbildung von Bildpatches auf Blickvektoren oder Bildschirmkoordinaten erfolgen. Falch und Lohan nutzen appearances-basierte #gls("CNN")-Modelle, etwa ein OpenVINO-Modell oder ein auf ETH‑XGaze trainiertes Netz, um aus Augenbildern und Kopfpose zunächst einen normierten Blickvektor im Kamerakoordinatensystem zu bestimmen. In vielen Webcamsystemen wird dieser Blickvektor oder die normierte Pupillenposition zunächst in einen lokalen Koordinatenraum des Auges bzw. Gesichts überführt, um unterschiedliche Augenformen und Abstände zur Kamera zu kompensieren. Anschließend erfolgt die Abbildung in Bildschirmkoordinaten, entweder über direkte Regressionsmodelle (z. B. polynomielle Regression von Augenmerkmalen auf Bildschirmposition) oder wie bei Falch und Lohan über eine explizite homogene Transformationsmatrix vom Blick- in das Bildschirmkoordinatensystem, mit der der Einheits-Blickvektor auf die Bildschirmebene projiziert wird. #cite(<falch_webcam-based_2024>)
+
+Eine Kalibrierungsphase ist dabei zentral, um individuelle Unterschiede und setupspezifische Geometrie (Kameraposition, Bildschirmgröße, Sitzposition) zu erfassen. In der Arbeit von C. et al. fixieren Nutzerinnen und Nutzer definierte Punkte auf dem Bildschirm, während das System die zugehörigen Augenpositionen erfasst und daraus ein Regressionsmodell für die Cursorabbildung lernt. #cite(<c_real-time_2025>) Falch und Lohan verwenden vier Kalibrierpunkte in Bildschirmnähe und formulieren ein Regressionsproblem, in dem die Parameter der Transformationsmatrix so bestimmt werden, dass die projizierten Blickpunkte möglichst gut mit diesen bekannten Bildschirmkoordinaten übereinstimmen. #cite(<falch_webcam-based_2024>) In beiden Fällen entsteht eine funktionale Abbildung von normierten Augen‑ bzw. Blickmerkmalen auf Bildschirmpositionen, die im Betrieb für kontinuierliche Cursorsteuerung genutzt wird. 
+
+Ein zentrales praktisches Problem ist Jitter, also zeitliche Fluktuationen der geschätzten Blickposition trotz weitgehend stabiler Fixation. Dieser Jitter entsteht unter anderem durch Bildrauschen, leichte Kopfbewegungen, Beleuchtungsänderungen und die inhärente Unsicherheit der Modellvorhersagen. Kartynnik et al. zeigen, dass bereits bei Gesichtslandmarks in Video-Sequenzen sichtbarer temporaler Jitter auftritt und schlagen zur Kompensation einen eindimensionalen zeitlichen Filter vor, der dem 1‑Euro-Filter nachempfunden ist. Die Grundidee besteht darin, bei langsamen Bewegungen stärker zu glätten und bei schnellen Bewegungen weniger zu filtern, um Stabilität und geringe Latenz in ein ausgewogenes Verhältnis zu bringen. #cite(<kartynnik_real-time_2019>) C. et al. setzen zur Glättung der Blickdaten für die Cursorsteuerung einen Exponential Moving Average ein, um abrupte Sprünge zu vermeiden und einen flüssigeren Cursorverlauf zu erreichen, nehmen dafür aber eine gewisse Trägheit in Kauf. #cite(<c_real-time_2025>)
+
+Neben der Blickrichtung spielt auch die Erkennung von Lidbewegungen eine wichtige Rolle, da diese zur Auslösung von Klickaktionen verwendet werden kann. C. et al. nutzen dazu den #gls("EAR"), der aus vertikalen und horizontalen Abständen zwischen definierten Augen-Landmarks berechnet wird. Ein starker und anhaltender Abfall des #gls("EAR") unter einen empirisch bestimmten Schwellwert (≈ 0,28) wird als Blinkereignis interpretiert. Blinzeln mit einer Dauer über 300 ms gelten als intentional und lösen Klickaktionen aus, während kürzere, spontane Blinzler ignoriert werden. In Kombination mit der Blickrichtung entsteht so ein komplettes Interaktionsschema, in dem der Blick die Cursorposition bestimmt und gezielte Blinzler Mausklicks auslösen. #cite(<c_real-time_2025>)
+
+Ein weiterer Aspekt der Grundlagen ist die Kopplung von Kopfbewegungen und Blickschätzung (Head-Coupling). In rein zweidimensionalen kamerabasierten Systemen kann schon eine moderate Kopfübersetzung zu systematischen Fehlern führen, wenn sie im Modell wie eine Rotation (Yaw/Pitch) interpretiert wird und damit die projizierte Blickposition verzerrt. Falch und Lohan adressieren dies, indem sie zusätzlich Structure-from-Motion-Methoden einsetzen, um aus aufeinanderfolgenden Webcam-Bildern die relative 3D-Bewegung des Kopfes abzuschätzen und diese in eine zeitabhängige Transformation zwischen Kamera‑, Blick- und Bildschirmkoordinatensystem einzubeziehen. #cite(<falch_webcam-based_2024>) Kartynnik et al. zeigen, dass das 3D-Face-Mesh-Modell grundsätzlich in der Lage ist, auch bei teilweiser Okklusion und Randlagen des Gesichts plausible Geometrien zu rekonstruieren, was eine robuste Schätzung von Kopfpose und Gesichtsbewegung für Head-Tracking- oder Kopfpose-Kompensation erlaubt. #cite(<kartynnik_real-time_2019>) Insgesamt ergibt sich damit ein Bild, in dem Eye-Tracking mit Standard-Webcams auf der Kombination aus dichter Gesichtsmodellierung, zuverlässiger Kalibrierung, zeitlicher Filterung und expliziter Behandlung von Kopfbewegungen beruht.
+
+=== Typische Fehlerquellen
+
+Die Präzision und Robustheit von Webcam-basierten Eye-Tracking-Systemen wird durch eine Vielzahl von Faktoren beeinflusst, die sich grundlegend in umgebungsbedingte, systemimmanente und physiologische Fehlerquellen unterteilen lassen. Im Gegensatz zu spezialisierter Hardware, die oft kontrollierte Infrarot-Beleuchtung nutzt, sind Consumer-Lösungen einer dynamischen Umgebung ausgesetzt, was die Extraktion verlässlicher Blickdaten erschwert #cite(<skodras_precise_2015>) #cite(<skodras_visual_2015>).
+
+Die Beleuchtung stellt dabei eine der kritischsten umgebungsbedingten Fehlerquellen dar. Da die Landmark-Detektion auf Kontrastunterschieden im Videobild basiert, führen ungleichmäßige Ausleuchtung, Schattenbildung im Gesicht oder externe Lichtreflexionen zu einer fehlerhaften Segmentierung der Iris oder der Pupille. Insbesondere bei niedrigen Lichtstärken nimmt das Bildrauschen der Kamerasensoren massiv zu, was die präzise Lokalisation der Augenmitte („Eye Center Localization“) behindert und die statistische Fehleranfälligkeit der Algorithmen drastisch erhöht #cite(<skodras_precise_2015>).
+
+Zusätzlich zu den Lichtverhältnissen begrenzen systemimmanente Faktoren der Hardware die Datenqualität. Ein wesentlicher Nachteil von Standard-Webcams gegenüber dedizierten Eye-Trackern ist die Kombination aus geringer Abtastrate (Sampling Rate) und niedriger Bildauflösung. Während medizinische oder hochpräzise Systeme Sakkaden mit mehreren hundert bis tausend Hertz erfassen, führen die üblichen 30 bis 60 FPS handelsüblicher Webcams zu einem erheblichen Informationsverlust bei schnellen Augenbewegungen #cite(<harezlak_application_2018>). Die daraus resultierende Datenqualität wird in der Forschung primär durch zwei Metriken beschrieben: die Accuracy (Genauigkeit), welche den systematischen Versatz zwischen berechnetem und realem Blickpunkt definiert, und die Precision (Präzision), die das Ausmaß des räumlichen Rauschens bzw. des „Jitters“ bei einer stabilen Fixation beschreibt #cite(<k_et_al_eye_tracking_a_comprehensive_guide_to_methods_and_measures_nodate>).
+
+Ein weiteres zentrales Problem stellt die anatomische und neuronale Kopplung von Augen- und Kopfbewegungen dar, das sogenannte „Head-Coupling“. Da Nutzer in einer natürlichen Arbeitsumgebung selten eine vollkommen starre Kopfpose einnehmen, müssen softwarebasierte Algorithmen hochgradig differenzieren können, ob eine Veränderung der Irisposition im Bild durch eine tatsächliche Blickwendung oder durch eine minimale Rotation des Kopfes entstanden ist. Ohne eine explizite Kompensation dieser Kopfbewegungen führen bereits geringfügige Haltungsänderungen zu signifikanten systematischen Abweichungen des berechneten Blickpunkts #cite(<skodras_visual_2015>). Während die Kopfpose hier als Störgröße für die Blickschätzung fungiert, wird sie in Kapitel 2.3 als eigenständiges, robustes Steuersignal eingeführt.
+
+Abschließend wirken physiologische Einflüsse und individuelle Merkmale des Nutzers als Fehlerquellen. Externe Faktoren wie Reflexionen auf Brillengläsern, die Verdeckung der Iris durch herabhängende Augenlider oder lange Wimpern sowie unterschiedliche Augenfarben beeinflussen die Robustheit der Detektionsalgorithmen maßgeblich. Diese „Okklusionen“ führen häufig zu einem kurzzeitigen Abriss des Datenstroms, was eine kontinuierliche und barrierefreie Steuerung ohne zusätzliche Filterverfahren nahezu unmöglich macht #cite(<harezlak_application_2018>), #cite(<k_et_al_eye_tracking_a_comprehensive_guide_to_methods_and_measures_nodate>).
+
+=== Signalverarbeitung und Filterverfahren
+
+In der praktischen Anwendung von Eye-Tracking-Systemen stellt das Bildrauschen der Kamera sowie die natürliche Instabilität menschlicher Augenbewegungen eine Herausforderung dar. Um ein präzises Steuersignal für die Mensch-Computer-Interaktion (HCI) zu erhalten, ist eine methodische Trennung zwischen Signal und Rauschen notwendig. Raju et al. definieren hierfür eine klare Frequenzgrenze. Um relevante Ereignisse wie Sakkaden und Fixationen zu erhalten, sind Daten mit Sinuswellenfrequenzen unter 100 Hz als Signal zu betrachten, während Frequenzanteile oberhalb dieser Grenze als Rauschen gewertet werden. #cite(<raju_filtering_2023>)
+
+Im Folgenden werden die in der Literatur etablierten Filterverfahren verglichen, die zur Erreichung dieser Trennung eingesetzt werden.
+
+*Gleitender Durchschnitt #gls("SMA")* 
+
+Das einfachste Verfahren zur Glättung von Blickdaten ist der gleitende Durchschnitt. Hierbei wird der aktuelle Messwert durch das arithmetische Mittel der letzten $N$ Datenpunkte ersetzt. #cite(<spakov_comparison_2012>)
+
+$
+x_"geglättet" (t) = 1 / N sum_(i=0)^(N-1) x(t-i)
+$
+
+Obwohl dieses Verfahren recheneffizient ist, weist Špakov auf einen entscheidenden Nachteil hin. Der SMA führt eine signifikante Verzögerung (Lag) bei der Aktualisierung der Cursorposition nach einer Sakkade ein. Dies liegt daran, dass die ersten Messwerte einer neuen Fixation ein zu geringes Gewicht im Durchschnittfenster haben, um schnell auf die starke Änderung des Eingangssignals zu reagieren.
+
+*#gls("FIR") Filter*
+
+Um die Probleme einfacher Mittelwerte zu umgehen, werden häufig gewichtete FIR-Filter eingesetzt. Diese nutzen eine Kernfunktion (Kernel), um unterschiedliche Gewichte $W_i$ an die vergangenen Datenpunkte zu vergeben. #cite(<spakov_comparison_2012>)
+
+$
+"FP" = (sum_(i=1)^(N) W_i dot "RP"_i)/(sum_(i=1)^(N) W_i)
+$
+
+_(wobei $"FP"$ der gefilterte Punkt und $"RP"$ der Rohwert ist)_ #cite(<spakov_comparison_2012>)
+
+Raju et al. heben hervor, dass #gls("FIR")-Filter im Vergleich zu anderen digitalen Filtern den steilsten Abfall (Roll-off) in der Frequenzantwort bieten. Dadurch kann Rauschen oberhalb von 100 Hz effektiver eliminiert werden, während das eigentliche Signal nahezu unverfälscht erhalten bleibt. Ein kritischer Aspekt ist jedoch, dass jede Filterung zwangsläufig die zeitliche Autokorrelation des Signals erhöht, womit Forscher zugunsten der Rauschunterdrückung „leben müssen“. #cite(<raju_filtering_2023>)
+
+*#gls("EMA")*
+
+Der #gls("EMA"), auch als Tiefpassfilter erster Ordnung bekannt, gewichtet aktuellere Werte exponentiell stärker als vergangene. Die diskrete Realisierung lautet: #cite(<casiez_1_2012>)
+
+$
+hat(X)_i = alpha X_i + (1 - alpha) hat(X)_(i-1)
+$
+
+Hierbei ist $alpha$ ein Glättungsfaktor zwischen 0 und 1. Da der Beitrag älterer Werte exponentiell abnimmt, erzeugt der #gls("EMA") bei gleicher Jitter-Reduktion oft weniger Latenz als ein #gls("SMA") mit großem Fenster $N$. #cite(<casiez_1_2012>)
+
+*1-Euro-Filter (Adaptive Glättung)*
+
+Speziell für die Herausforderungen in interaktiven Systemen entwickelten Casiez et al. den 1€-Filter. Er basiert auf einem #gls("EMA"), nutzt jedoch eine adaptive Grenzfrequenz, die von der Geschwindigkeit der Eingabebewegung abhängt. 
+Die Logik folgt der menschlichen Wahrnehmung. Bei langsamen Bewegungen (Fixationen) reagieren Menschen empfindlich auf Jitter, weshalb hier stark gefiltert wird. Bei hohen Geschwindigkeiten (Sakkaden) steigt die Empfindlichkeit gegenüber Latenz, weshalb die Filterung reduziert wird. #cite(<casiez_1_2012>)
+
+Die Berechnung der adaptiven Grenzfrequenz $f_c$ erfolgt über die Ableitung des Signals (Geschwindigkeit):
+
+1. Grenzfrequenz berechnen: $ f_c = f_c_("min") + beta dot abs(hat(X)_i) $
+2. Zeitkonstante ableiten: $ tau = 1/(2 pi f_c) $
+3. Glättungsfaktor bestimmen: $ alpha = 1/(1+tau/T_c) $
+
+Durch diesen adaptiven Ansatz erzielt der 1€-Filter in Vergleichen oft die geringste Latenz bei gleichzeitig hoher Signalstabilität im Ruhezustand. #cite(<casiez_1_2012>)
+
+
+== Grundlagen Head-Tracking
+
+Das Head-Tracking (Kopfverfolgung) stellt eine robuste Alternative oder Ergänzung zum Eye-Tracking dar, da es die Steuerung nicht auf die Bulbusrotation, sondern auf die physische Lage und Orientierung des Schädels im Raum stützt. In der computergestützten Bildverarbeitung wird dieser Prozess als Head Pose Estimation bezeichnet, also das Schließen auf die Ausrichtung des Kopfes aus digitalen Bilddaten #cite(<murphy-chutorian_head_2009>).
+
+=== Funktionsprinzip und Freiheitsgrade
+
+In der Modellierung wird der menschliche Kopf oft als ein starrer Körper (Rigid Object) betrachtet. Unter dieser Annahme verfügt die Kopfpose über insgesamt sechs Freiheitsgrade (6 DoF). Drei translatorische Freiheitsgrade für die Position im Raum sowie drei rotatorische Freiheitsgrade, die durch die Winkel Pitch (Neigen), Roll (Kanten) und Yaw (Drehen) definiert sind #cite(<murphy-chutorian_head_2009>).
+
+Für die zweidimensionale Cursorsteuerung auf einem Bildschirm sind primär die Rotationen um die X-Achse (Pitch) und die Y-Achse (Yaw) relevant, da sie die vertikale und horizontale Blickrichtung des Kopfes bestimmen #cite(<murphy-chutorian_head_2009>). Wie bereits in Kapitel 2.2 dargelegt, bildet das MediaPipe Face Mesh Modell hierfür die geometrische Grundlage, indem es 478 dreidimensionale Landmarks extrahiert. Während für das Eye-Tracking die Iris-Landmarks entscheidend sind, werden beim Head-Tracking stabilere Referenzpunkte, wie beispielsweise die Nasenspitze (Landmark 1), zur Vektorableitung genutzt.
+
+=== Pose-Estimation vs. Diskretisierung
+
+Die Verwendung der Kopfpose bietet signifikante Vorteile gegenüber der reinen Blicksteuerung hinsichtlich der Signalstabilität. Ein fundamentales Problem des Eye-Trackings ist, dass Augen primär Wahrnehmungsorgane und keine Steuerungswerkzeuge sind. Dies führt oft zum sogenannten „Midas Touch“-Problem, bei dem Nutzer versehentlich Aktionen auslösen, nur weil sie ein Element betrachten #cite(<bates_why_2003>).
+
+Im Gegensatz dazu sind Kopfbewegungen bewusster gesteuert und weitaus weniger anfällig für unwillkürliche Mikro-Sakkaden, also schnelle, ruckartige Augenbewegungen. Da das Gesicht eine größere Fläche als die Iris bietet und die Landmarks über das gesamte Face Mesh verteilt sind, liefert die Kopfpose ein rauschärmeres Signal, das sich besser für feingliedrige motorische Aufgaben auf grafischen Benutzeroberflächen eignet #cite(<bates_why_2003>).
+
+=== Ergonomie und Transferfunktion
+
+Die Steuerung mittels Kopfhaltung ist ein komplexer motorischer Prozess, der die Koordination von Kopf, Nacken und teilweise dem Torso erfordert. Um die in Kapitel 2.1 geforderte Minimierung der biomechanischen Belastung zu erreichen, muss das System so kalibriert sein, dass eine feste Ausgangshaltung (Initial Posture) als Nullpunkt dient #cite(<radwin_method_1990>).
+
+Ein zentrales Konzept ist hierbei der Control-Display Gain (oder C/D Gain). Dieser beschreibt das Verhältnis zwischen der physischen Bewegung des Nutzers und der daraus resultierenden Bewegung des Cursors auf dem Display. Ein optimal gewählter Gain ermöglicht es, große Bildschirmdistanzen mit kleinen, komfortablen Kopfbewegungen zu überbrücken, was die Ermüdung reduziert. Die Leistungsfähigkeit solcher Systeme lässt sich wissenschaftlich durch Fitts' Law evaluieren, welches die benötigte Zeit für eine Zielauswahl in Abhängigkeit von der Zielgröße und der Entfernung beschreibt. Studien zeigen zudem eine deutliche Lernkurve. Mit zunehmender Übung sinkt die durchschnittliche Bewegungszeit (Movement Time) der Nutzer signifikant #cite(<radwin_method_1990>).
+
+== MediaPipe Face Mesh als technisches Fundament
+
+Das Framework MediaPipe bildet die technologische Basis für die in dieser Arbeit entwickelte Anwendung, da es eine effiziente Umgebung zur Erstellung komplexer Wahrnehmungs-Pipelines bietet. Inferenzvorgänge über verschiedene Sensordaten, wie etwa Video- oder Audiostreams, lassen sich hiermit modular organisieren und in Echtzeit verarbeiten. Die grundlegende Philosophie des Frameworks beruht auf einem gerichteten Graphen, in dem einzelne Komponenten, sogenannte „Calculators“, über Datenströme („Streams“) miteinander verknüpft sind. Diese granulare Aufteilung ermöglicht es, die Bildverarbeitungsschritte logisch voneinander zu trennen und gleichzeitig sicherzustellen, dass die gesamte Analyse effizient auf unterschiedlichen Hardwareplattformen skaliert werden kann. #cite(<lugaresi_mediapipe_2019>)
+
+=== Architektur und Machine-Learning-Pipeline
+
+Die Architektur von MediaPipe ist primär auf die performante Verarbeitung von Datenfluss-Graphen ausgelegt, wobei Pakete entlang der Kanten fließen und durch präzise Zeitstempel synchronisiert werden. Diese Struktur ist essentiell für die Echtzeit-Verarbeitung von Videosignalen, da sie eine parallele Ausführung von Berechnungen sowohl auf der #gls("CPU") als auch auf der #gls("GPU") erlaubt #cite(<lugaresi_mediapipe_2019>). Für die Modellierung der Gesichtsoberfläche kommt ein spezielles #gls("ML")-Verfahren zum Einsatz, das in der Lage ist, eine dreidimensionale Geometrie aus einer gewöhnlichen, monokularen Kameraquelle abzuleiten. #cite(<noauthor_mediapipe_nodate-2>)
+
+Der Detektionsprozess innerhalb dieser Pipeline ist zweistufig aufgebaut, um die Rechenlast zu minimieren. Zunächst identifiziert das Modell BlazeFace als leichtgewichtiger Gesichtdetektor den relevanten Bildausschnitt und lokalisiert das Gesicht im Rahmen #cite(<bazarevsky_blazeface_2019>). Erst im darauffolgenden Schritt sagt das eigentliche Face-Mesh-Modell die präzisen Landmarks innerhalb dieses detektierten Bereichs vorher #cite(<noauthor_anleitung_nodate>). Durch die Integration von Inferenz-Engines wie TensorFlow Lite wird sichergestellt, dass dieses System auf mobilen Endgeräten ebenso flüssig operiert wie auf Desktop-Systemen #cite(<lugaresi_mediapipe_2019>). Die Effizienz der Pipeline ermöglicht es dabei, sub-millimetergenaue 3D-Koordinaten bereitzustellen, ohne die Systemressourcen übermäßig zu beanspruchen #cite(<noauthor_mediapipe_nodate-2>).
+
+=== Landmark-Toplogie und Iris-Refinement
+
+Das MediaPipe Face Mesh liefert im Standard-Output insgesamt 478 dreidimensionale Landmarks, welche die Oberflächentopologie des menschlichen Gesichts in einem (x, y, z)-Koordinatensystem detailliert abbilden. Während die x- und y-Koordinaten als normalisierte Werte im Bildraum vorliegen, repräsentiert die Z-Achse die relative Tiefe zum Gesichtsschwerpunkt. Diese räumliche Information ist von entscheidender Bedeutung, um zwischen einer tatsächlichen Augenrotation und einer einfachen Veränderung der Kopfpose zu differenzieren. #cite(<noauthor_mediapipe_nodate-2>)
+
+Für die spezifischen Anforderungen der Blickverfolgung kann die Topologie durch den Parameter „refine_landmarks“ signifikant erweitert werden. Durch diese Aktivierung generiert das System zusätzliche zehn Landmarks für die Iris-Region, jeweils fünf Punkte pro Auge, die eine hochpräzise Bestimmung der Irisposition ermöglichen. Diese verfeinerte Detektion bildet das Herzstück für Anwendungen, die auf eine blickbasierte Interaktion angewiesen sind, da sie die nötige Granularität liefert, um kleinste Bewegungen des Augapfels innerhalb der Augenhöhle zu erfassen. #cite(<noauthor_mediapipedocssolutionsirismd_nodate>)
+
+=== Eignung für hybride Interaktionssysteme
+
+Die Vielseitigkeit der extrahierten Landmarks prädestiniert MediaPipe für den Einsatz in hybriden Systemen. Aus der Gesamtheit der Gesichtspunkte lässt sich die Kopfpose berechnen, die mathematisch durch eine Rotationsmatrix und einen Translationsvektor im dreidimensionalen Raum definiert ist. Dies eröffnet die Möglichkeit, den Kopf als eigenständiges und im Vergleich zum Auge oft stabileres Steuersignal für die Cursorführung zu verwenden #cite(<noauthor_mediapipe_nodate-1>). Ergänzend dazu stellt das System 52 sogenannte „Blendshape-Scores“ bereit. Diese Scores quantifizieren verschiedene Gesichtsausdrücke, wie etwa das Hochziehen der Brauen oder das Öffnen des Mundes, und können unmittelbar zur Auslösung diskreter Aktionen, beispielsweise Mausklicks, genutzt werden. #cite(<noauthor_anleitung_nodate>)
+
+Ein besonderer technischer Vorteil ergibt sich zudem aus der Iris-Detektion im Hinblick auf die metrische Tiefenschätzung. Da die Größe der menschlichen Iris anatomisch gesehen weitgehend konstant ist, kann das System die reale Distanz zwischen Nutzenden und Kamera ohne zusätzliche Hardware-Tiefensensoren bestimmen. Diese metrische Information verbessert die Robustheit des Mappings zwischen den physischen Bewegungen im Raum und der daraus resultierenden Reaktion des Cursors auf dem Bildschirm erheblich, was die Basis für eine konsistente barrierefreie Steuerung schafft. #cite(<noauthor_mediapipedocssolutionsirismd_nodate>)
+
+== Alternative Eye-Tracking-Ansätze
+
+In der Entwicklung blickbasierter Mensch-Computer-Schnittstellen haben sich verschiedene technologische Pfade etabliert, die sich hinsichtlich der verwendeten Sensorik, der Invasivität des Messverfahrens sowie der Robustheit gegenüber Umgebungsfaktoren unterscheiden. Während die vorliegende Arbeit den Fokus auf passive Bildverarbeitungsverfahren mittels #gls("RGB")-Webcams legt, ist eine Einordnung gegenüber etablierten Hardware-Lösungen und alternativen physikalischen Messprinzipien für die kritische Bewertung der technologischen Grenzen essenziell. #cite(<duchowski_eye_2017>)
+
+Der gegenwärtige technische Standard in Forschung und klinischer Anwendung wird primär durch die Video-Okulographie (VOG) definiert, wobei insbesondere das Prinzip der „Pupil Center Corneal Reflection“ (PCCR) als Referenz gilt. Im Gegensatz zu herkömmlichen Webcams nutzen diese Systeme aktive Infrarotlichtquellen, um gezielte Reflexionen, sogenannte Glints, auf der Hornhaut des Nutzers zu erzeugen. Das grundlegende Funktionsprinzip basiert darauf, den Vektor zwischen der Pupillenmitte und diesen stabilen Reflexionspunkten mathematisch auszuwerten. Ein entscheidender Vorteil dieser Methode ist die signifikant höhere Robustheit gegenüber moderaten Kopfbewegungen, da der relative Vektor zwischen Pupille und Glint eine präzisere Schätzung ermöglicht, als dies bei einer isolierten Betrachtung der Iris- oder Pupillenposition in einem zweidimensionalen Bildraum der Fall wäre. Zudem minimiert die Nutzung des Infrarotspektrums die Fehleranfälligkeit durch wechselnde sichtbare Lichtverhältnisse im Nutzungskontext. #cite(<duchowski_eye_2017>)
+
+Einen methodischen Gegenentwurf zu den geometrischen, Landmark-basierten Verfahren stellen moderne, rein softwarebasierte „Appearance-based“-Ansätze dar. Anstatt explizite Merkmale wie Augenwinkel oder Pupillenränder zu extrahieren, nutzen diese Verfahren die gesamte Bildinformation des Gesichtsfeldes. Durch den Einsatz von Convolutional Neural Networks (CNNs) wird hierbei eine direkte Abbildung des Bildinhaltes auf Blickkoordinaten (End-to-End-Learning) realisiert. Durch das Training auf massiven, unter Alltagsbedingungen aufgenommenen Datensätzen wie „GazeCapture“ gelingt es diesen Modellen, eine hohe Generalisierungsfähigkeit über verschiedene Endgeräte wie Smartphones, Tablets oder Laptops hinweg zu erreichen, ohne auf spezialisierte Infrarotsensorik angewiesen zu sein. Diese Ansätze konkurrieren unmittelbar mit dem in dieser Arbeit verfolgten Ziel einer kostengünstigen Implementierung auf Standardhardware. #cite(<krafka_eye_2016>)
+
+Abseits der optischen Erfassungsverfahren stellt die Elektrookulographie (EOG) eine bedeutende elektrophysiologische Alternative dar, die insbesondere im Bereich der assistiven Technologien für schwerstmotorisch eingeschränkte Menschen Anwendung findet. Die EOG basiert auf der Messung der Potentialdifferenz zwischen der Vorder- und Rückseite des Augapfels, dem sogenannten Bestandspotential. Da das Auge einen elektrischen Dipol darstellt, lassen sich Richtungsänderungen der Blickachse über Elektroden auf der Hautoberfläche im Bereich der Augenhöhlen erfassen. Ein wesentlicher technologischer Vorteil der EOG gegenüber kamerabasierten Systemen ist die Unabhängigkeit von einer direkten Sichtverbindung (Line-of-Sight) zum Auge. Das System ist somit unempfindlich gegenüber externen Beleuchtungsschwankungen, Verdeckungen durch Brillen oder herabhängende Augenlider und funktioniert prinzipiell sogar bei geschlossenen Augen. Diese Vorteile werden jedoch durch die Invasivität des Verfahrens erkauft, da die notwendige Hautmontage der Elektroden den täglichen Nutzungskomfort im Vergleich zu berührungslosen Systemen einschränkt. #cite(<barea_system_2002>)
+
+Zuletzt sind kopfgetragene Systeme (Head-mounted Eye-Tracker) zu nennen, welche die räumliche Distanz zwischen Sensor und Nutzer aufheben. Indem Kameras unmittelbar vor dem Auge des Nutzers, meist integriert in ein Brillengestell, platziert werden, lassen sich hochauflösende Bilder der Pupille erfassen, die nahezu unabhängig von der Distanz zum betrachteten Objekt oder Bildschirm sind. Diese unmittelbare Nähe zum Auge ermöglicht eine sehr hohe Abtastrate und Präzision, da die Perspektivverzerrung, die bei stationären Kameras („Remote Eye-Tracker“) durch Kopfdrehungen entsteht, systembedingt minimiert wird. Während solche Wearables in mobilen Szenarien oder bei der Interaktion im Raum überlegen sind, stellt das Tragen einer solchen Vorrichtung in einem stationären PC-Arbeitsumfeld oft eine zusätzliche biomechanische und psychologische Hürde dar, die im Rahmen der Barrierefreiheit kritisch abgewogen werden muss. #cite(<kassner_pupil_2014>)
+
+== Abgrenzung und Begründung der Technologieauswahl
+
+Die vorangegangene Analyse verschiedener Eye-Tracking-Ansätze (Kapitel 2.2 bis 2.5) verdeutlicht die technologische Spannweite zwischen hochpräziser Spezialhardware und rein softwarebasierten Lösungen. Für die vorliegende Arbeit erfolgt eine bewusste Entscheidung zugunsten eines webcambasierten, hybriden Ansatzes unter Verwendung von Python und dem MediaPipe-Framework. Diese Wahl wird nachfolgend anhand funktionaler, ökonomischer und ergonomischer Kriterien begründet.
+
+Die Entscheidung für MediaPipe Face Mesh als technisches Fundament basiert auf der hohen Effizienz der zugrundeliegenden Machine-Learning-Pipeline. Im Gegensatz zu klassischen bildverarbeitenden Verfahren ermöglicht MediaPipe eine robuste 3D-Landmark-Extraktion in Echtzeit, selbst auf Endgeräten mit begrenzter Rechenleistung. Durch die Ausführung auf der GPU können Bildraten erreicht werden, die weit über den Anforderungen für eine flüssige Cursorsteuerung liegen. Die Erweiterung durch das Iris-Refinement bietet eine Granularität, die für blickbasierte Interaktionen essenziell ist, ohne dass zusätzliche Infrarotsensoren benötigt werden. Die Wahl von Python erlaubt durch Bibliotheken wie OpenCV und PyAutoGUI eine schnelle Prototypisierung und eine nahtlose Integration der mathematischen Signalverarbeitung.
+
+Obwohl infrarotbasierte Systeme (PCCR) bauartbedingt eine höhere Robustheit gegenüber Lichtwechseln bieten, stehen sie dem Ziel einer niederschwelligen Barrierefreiheit entgegen. Spezialhardware ist oft kostspielig und erfordert eine spezifische Montage. Standard-Webcams sind in nahezu jedem modernen Laptop integriert und somit ohne Zusatzkosten verfügbar. Im Vergleich zu Elektrookulographie (EOG) oder Head-mounted Trackern bleibt der Nutzungskontext berührungslos, was die psychologische Hemmschwelle und die biomechanische Belastung minimiert.
+
+Die entscheidende konzeptionelle Abgrenzung dieser Arbeit liegt in der Kombination von Head-Tracking für die Cursorführung und Eye-Tracking/Mimik für diskrete Aktionen. Da Augen primär Wahrnehmungsorgane sind, führt eine reine Blicksteuerung häufig zum „Midas Touch“-Problem. Kopfbewegungen hingegen sind bewusster steuerbar und weisen ein geringeres Grundrauschen (Jitter) auf. Durch die Nutzung des Control-Display Gains lassen sich kleine Kopfbewegungen effizient in große Cursorwege übersetzen, was die Anforderungen an die biomechanische Belastung gemäß ISO 9241 #cite(<noauthor_bluffers_nodate>) erfüllt.
+
+Zusammenfassend bietet die Kombination aus der Programmiersprache Python und dem Framework MediaPipe die notwendige Flexibilität, um ein System zu realisieren, das Hardwareunabhängigkeit mit einer praxistauglichen Bedienlogik vereint.
+
+= Methodik & Implementierung
+
+Im folgenden Kapitel wird die praktische Umsetzung des Systems „EyeAssist“ detailliert beschrieben. Basierend auf den in Kapitel 2 erarbeiteten theoretischen Grundlagen und den Erkenntnissen aus den Voruntersuchungen (vgl. Kapitel 3.5 Experimente) wurde eine Softwarelösung entwickelt, die eine barrierefreie PC-Steuerung ohne Spezialhardware ermöglicht. Der Fokus liegt hierbei auf der algorithmischen Verarbeitung von Videostreams zur Extraktion von Steuerungsbefehlen.
+
+== Systemüberblick
+
+Das entwickelte System verfolgt einen modularen Architekturansatz, um eine flexible Verarbeitung von Bilddaten in Echtzeit zu gewährleisten. Die zentrale Entwurfsentscheidung, die aus den ersten Experimenten mit Standard-Webcams hervorging, ist der Übergang von einem reinen Eye-Tracking-System zu einem hybriden Steuerungskonzept. Während die initiale Forschungsfrage die Nutzbarkeit von reinem Eye-Tracking fokussierte, zeigten die praktischen Tests, insbesondere Experiment 1 bis 3 (vgl. Kapitel 4), dass die räumliche Auflösung und das Signalrauschen herkömmlicher #gls("RGB")-Kameras für eine alleinige Cursorsteuerung per Blickrichtung unzureichend sind.
+
+=== Das hybride Steuerungskonzept
+
+Um die Anforderungen an Präzision und Nutzbarkeit (Usability) zu erfüllen, wurde das System als Hybrid-Lösung konzipiert. Hierbei werden zwei unterschiedliche biometrische Modalitäten kombiniert:
+
+1. *Head-Tracking für die Cursorpositionierung:* Die grobe und feine Bewegung des Mauszeigers erfolgt über die Verfolgung der Kopfpose (Head-Pose Estimation). Wie in Experiment 4 (vgl. Kapitel 4.4) verifiziert, bietet die Nase als zentraler, stabiler Referenzpunkt im Gesicht eine deutlich höhere Signalstabilität und geringeren Jitter als die Iris-Extraktion.
+2. *Gaze- & Mimik-Tracking für Interaktionsereignisse:* Da die Augen für die Navigation entlastet werden, können spezifische Blickmuster oder mimische Gesten, wie Blinzeln oder das Schließen eines Auges, dedizierten Mausaktionen, wie Links-Klick, Rechts-Klick oder Scrollen zugewiesen werden.
+
+Dieser Ansatz minimiert die kognitive Last, da die Instabilität des Blickstrahls (Gaze) nicht mehr direkt zu einem springenden Cursor führt, sondern nur noch diskrete Aktionen auslöst. Außerdem können die Augen dann zum normalen schauen benutzt werden, ohne dass die Maus sich sofort hinterher bewegt.
+
+=== Software-Architektur und Komponenten
+
+Die Anwendung ist in Python realisiert und in vier logische Hauptkomponenten unterteilt, die über eine zentrale Applikationsschicht (Application) koordiniert werden:
+
+- *Tracker-Engine:* Diese Komponente bildet die Schnittstelle zur Hardware. Sie konfiguriert den Kamera-Stream über OpenCV und nutzt das MediaPipe Face Mesh Framework, um in jedem Frame ein 3D-Gitter des Gesichts zu berechnen. Hier findet die Rohdatensammlung der Landmarks (Iris, Nasenspitze, Augenwinkel) statt.
+- *Gesture-Recognizer:* Dieses Modul analysiert die zeitlichen und räumlichen Veränderungen der Landmarks. Es berechnet Zustände wie den Eye Aspect Ratio (EAR) zur Blinzeldetektion oder die relative Verschiebung der Iris, um Interaktionsabsichten des Nutzers zu identifizieren.
+- *Mouse-Controller:* Die Aufgabe dieser Komponente ist die Abbildung (Mapping) der berechneten Gesichtskoordinaten auf das Desktop-Koordinatensystem des Betriebssystems. Hierbei kommen die in Kapitel 2.2.2 diskutierten Filterverfahren (insbesondere der One-Euro-Filter) zum Einsatz, um verbleibendes Rauschen zu glätten, ohne die Latenz spürbar zu erhöhen.
+- *Grafische Benutzeroberfläche (GUI):* Basierend auf PyQt6 bietet das System eine Oberfläche für die Kalibrierung, die Konfiguration der Sensitivität sowie eine visuelle Rückmeldung des aktuellen Tracking-Status (Overlay).
+
+=== Die Verarbeitungs-Pipeline
+
+Die funktionale Architektur von „EyeAssist“ ist als deterministische Echtzeit-Pipeline konzipiert. Um eine flüssige Interaktion zu gewährleisten, muss jeder Frame des Videostreams die folgenden sechs Phasen innerhalb eines Zeitfensters von maximal 33,3 ms (entspricht 30 fps) durchlaufen:
+
+1. *Kamerazugriff und Frame-Erfassung:* Das System initiiert den Zugriff auf die Hardware-Schnittstelle über das VideoCapture-Modul von OpenCV. Hierbei wird eine Standard-Auflösung von 640×480 Pixeln gewählt. Diese Auflösung stellt den optimalen Kompromiss zwischen der für MediaPipe notwendigen Detailtiefe (insbesondere für die Iris-Erkennung) und der zu verarbeitenden Datenmenge dar. Um die intuitive Steuerung zu unterstützen, wird das Bild unmittelbar nach der Erfassung horizontal gespiegelt (cv2.flip). Dies erzeugt einen „Spiegeleffekt“, der es dem Nutzer erleichtert, die Cursorbewegung mit den eigenen Kopf- und Augenbewegungen zu koordinieren.
+
+2. *Gesichtserkennung und Landmark-Extraktion:* Da MediaPipe Bilder im RGB-Format erwartet, OpenCV jedoch standardmäßig im BGR-Format akquiriert, erfolgt zunächst eine Farbraumkonversion. Das Herzstück dieser Phase ist das MediaPipe Face Mesh-Modell. Durch die Konfiguration refine_landmarks=True werden nicht nur die standardmäßigen 468 Gesichtspunkte, sondern insgesamt 478 dreidimensionale Landmarks extrahiert. Die zusätzlichen 10 Landmarks betreffen spezifisch die Iris-Regionen, welche für die spätere Detektion von Blickrichtungsänderungen und Augen-Gesten (z. B. Blinzeln) essentiell sind. Die Landmarks liegen in normalisierten Koordinaten vor, wobei die Z-Achse die relative Tiefe zum Kopfschwerpunkt repräsentiert, was eine räumliche Interpretation der Pose ermöglicht.
+
+3. *Merkmalsextraktion und Hybrid-Logik:* In diesem Schritt werden aus der Menge der 478 Landmarks die für die Hybrid-Steuerung relevanten Referenzpunkte isoliert. Gemäß der Entscheidung für eine robuste Steuerung (vgl. Experiment 4) fungiert die Nasenspitze (Landmark 1) als primärer Ankerpunkt für das Head-Tracking. Parallel dazu werden die Koordinaten der Augenlider und der Lippen (Landmarks 13 und 14) extrahiert, um den Mouth Aspect Ratio (MAR) oder den Eye Aspect Ratio (EAR) zu berechnen. Diese Merkmale ermöglichen es dem System, zwischen einer passiven Kopfzeiger-Bewegung und einer aktiven Interaktionsabsicht (z. B. ein Klick durch eine Mundgeste) zu unterscheiden.
+
+4. *Normalisierung und Bildschirm-Mapping:* Die relative Verschiebung der Nasenposition zur kalibrierten Nullstellung wird in Cursor-Koordinaten übersetzt. Hierbei transformiert der MouseController die normalisierten MediaPipe-Werte in Pixelwerte des Betriebssystems. Um die in Experiment 1 bis 3 festgestellte Trägheit von Webcams zu kompensieren, kommen adaptive Sensitivitätsfaktoren zum Einsatz (in der aktuellen Implementierung optimiert auf Werte wie 8.0 für die x-Achse und 10.0 für die y-Achse). Eine konfigurierbare Totzone (Deadzone) sorgt dafür, dass minimales natürliches Zittern des Kopfes in Ruheposition nicht zu einer instabilen Cursor-Darstellung führt.
+
+5. *Adaptive Glättung (One-Euro-Filter):* Ein entscheidender Unterschied zur Vorgängerversion ist der Verzicht auf den einfachen gleitenden Durchschnitt (Moving Average). Stattdessen implementiert das System den One-Euro-Filter. Dieser adaptive Tiefpassfilter ist speziell für die menschliche Computerinteraktion optimiert: Bei geringen Geschwindigkeiten filtert er das Signal stark, um Jitter zu eliminieren (hohe Präzision beim Zielen); bei hohen Geschwindigkeiten reduziert er die Filterwirkung, um die Latenz zu minimieren (hohe Reaktivität bei schnellen Bewegungen). Dies löst das in den Experimenten identifizierte Trade-off-Problem zwischen Stabilität und Trägheit.
+
+6. *Ereignissteuerung und Mausaktionen:* Nachdem die Cursorposition geglättet wurde, erfolgt die Injektion des Events in das Betriebssystem. Zeitgleich prüft der GestureRecognizer, ob die extrahierten Merkmale aus Schritt 3 definierte Schwellwerte überschreiten. Wird beispielsweise eine Mundöffnung erkannt, die über dem konfigurierten Threshold liegt, löst das System einen Linksklick aus. Um unbeabsichtigte Mehrfachauslösungen („Prellen“) zu verhindern, ist jede Geste mit einem zeitlichen Cooldown belegt. Die gesamte Logik ist so aufgebaut, dass Cursorbewegung und Klickereignis entkoppelt voneinander verarbeitet werden, was die Fehlklick-Rate signifikant senkt.
+
+//[Abbildungsvorschlag: Pipeline-Diagramm mit den sechs Hauptstufen von Kamerazugriff bis Mausaktionen]
+
+=== Hardware- und Laufzeitumgebung
+
+Ein Kernziel der Arbeit ist die Hardware-Agnostik. Das System wurde so entwickelt, dass es auf handelsüblichen Laptops der aktuellen Generation (getestet auf Windows-Workstations) mit integrierten 720p/1080p Webcams lauffähig ist.
+
+Die Verarbeitungskette ist auf eine minimale Latenz optimiert. Ein Frame durchläuft die Pipeline von der Aufnahme bis zur Mausbewegung in der Regel in unter 30 ms. Dies ist entscheidend, um die in der Einleitung geforderte „praktische Nutzbarkeit“ zu erreichen, da eine verzögerte Rückmeldung bei der Cursorsteuerung zu Desorientierung und schneller Ermüdung führt. Durch die Nutzung der CPU-basierten Optimierungen von MediaPipe ist zudem keine dedizierte Grafikkarte (GPU) für den Betrieb erforderlich, was die Barrierefreiheit hinsichtlich der Anschaffungskosten unterstreicht.
+
+== Kalibrierung, Normalisierung und Mapping
+
+Die Transformation einer biometrischen Bewegung in eine präzise Cursorsteuerung erfordert eine mehrstufige Datenverarbeitung. Da jeder Nutzer eine individuelle Sitzposition, Distanz zur Kamera und einen spezifischen physiologischen Bewegungsradius hat, bildet die Kalibrierung das notwendige Bindeglied zwischen Mensch und Maschine.
+
+=== Kalibrierung der Referenzpose
+
+Im Gegensatz zu komplexen 9-Punkt-Kalibrierungsverfahren für reines Eye-Tracking, die in frühen Experimenten (vgl. Experiment 1 bis 3) eine hohe Fehleranfälligkeit bei Kopfbewegungen zeigten, nutzt das aktuelle System eine Ein-Punkt-Zentrierung.
+
+Dabei wird der Nutzer aufgefordert, eine komfortable, neutrale Kopfhaltung einzunehmen und einen definierten Punkt auf dem Bildschirm zu fixieren. In diesem Moment speichert das System die aktuellen Koordinaten der Nasenspitze (Landmark 1) als relativen Nullpunkt ($X_"ref", Y_"ref"$). Alle nachfolgenden Bewegungen werden nicht als absolute Positionen im Videostream, sondern als Delta-Werte zu dieser Referenzpose interpretiert. Dies ermöglicht es dem Nutzer, das System unabhängig von der exakten Positionierung der Webcam zu verwenden. Dies ist besonders wichtig bei Laptop-Kameras, da diese nicht frei bewegt und befestigt werden können wie eine externe Kamera.
+
+//[CODE-SCHNIPSEL 1: Erfassung der Referenz-Landmarks in calibration_wizard.py]
+//Hier einfügen: Die Methode, die beim Klick auf "Kalibrieren" den aktuellen Snapshot der Landmark-Koordinaten in self.reference_pos speichert.
+
+=== Normalisierung des Bewegungsvektors
+
+Die von MediaPipe gelieferten Koordinaten sind auf den Bereich $[0.0; 1.0]$ normalisiert, bezogen auf die Breite und Höhe des Kamerabildes. Um eine konsistente Steuerung zu gewährleisten, wird der Differenzvektor zwischen der aktuellen Nasenposition ($X_"curr", Y_"curr"$) und der Referenzposition berechnet:
+
+$
+Delta x = x_("curr") - x_("ref")
+$
+
+$
+Delta y = y_("curr") - y_("ref")
+$
+
+Ein kritischer Aspekt der Normalisierung ist die Behandlung der Z-Achse (Tiefe). Da sich durch Vor- oder Zurücklehnen des Nutzers die Skalierung der Kopfbewegung im zweidimensionalen Kamerabild ändert, wird die relative Nasenposition in Relation zur Kopfgröße (Distanz zwischen den Schläfen-Landmarks) gesetzt. Dies sorgt dafür, dass die Mausgeschwindigkeit konstant bleibt, auch wenn der Nutzer seinen Abstand zur Webcam leicht verändert.
+
+=== Mapping-Funktion und Sensitivität
+
+Das Mapping übersetzt die normalisierten Delta-Werte in absolute Pixelkoordinaten auf dem Desktop. Hierbei kommen die im MouseController definierten Sensitivitätsfaktoren zum Einsatz.
+
+In der praktischen Erprobung hat sich gezeigt, dass die menschliche Kopfmechanik asymmetrisch arbeitet. Horizontale Drehbewegungen (Yaw) fallen meist leichter und präziser aus als vertikale Neigebewegungen (Pitch). Daher werden für die X- und Y-Achse unterschiedliche Skalierungsfaktoren verwendet. Während in der Konfiguration initial Werte von 5.0 und 6.0 vorgesehen waren, wurden diese für eine effiziente Desktop-Navigation auf 8.0 (X) und 10.0 (Y) optimiert. Die Berechnung der Zielkoordinaten erfolgt nach folgendem Schema:
+
+$
+P_"target" = P_"center" + (Delta dot "Sensitivity" dot "ScreenSize")
+$
+
+Um ein „Ausbrechen“ des Cursors an den Bildschirmrändern zu verhindern, wird das Ergebnis mittels einer Clamping-Funktion auf die tatsächliche Monitorauflösung begrenzt.
+
+//[CODE-SCHNIPSEL 2: Mapping-Logik in mouse_controller.py]
+//Hier einfügen: Die Berechnung der neuen Mausposition unter Verwendung von config["sensitivity_x"] und screen_width.
+
+=== Deadzone-Implementierung zur Rauschunterdrückung
+
+Selbst bei einer absolut ruhigen Kopfhaltung liefert die Landmark-Extraktion aufgrund von Sensorrauschen minimal schwankende Werte. Ohne Gegenmaßnahmen würde dies zu einem „Zittern“ des Cursors führen, was insbesondere das Klicken auf kleine UI-Elemente erschwert.
+
+Zusätzlich zur dynamischen Filterung (siehe Kapitel 3.4) implementiert das System eine tote Zone (Deadzone). Bewegungen, deren Betrag unter einem Schwellwert von $0.002$ (normalisierte Einheiten) liegen, werden ignoriert. Erst wenn die bewusste Bewegung diesen Schwellwert überschreitet, wird der Cursor aktualisiert. Dies stabilisiert den Fokuspunkt massiv, ohne die Reaktivität bei größeren Bewegungen spürbar zu beeinträchtigen.
+
+//[CODE-SCHNIPSEL 3: Anwendung der Deadzone und des Offsets]
+//Hier einfügen: Das If-Statement, das prüft, ob abs(delta) > deadzone ist, bevor die Position aktualisiert wird.
+
+== Kopfpose-Kompensation und hybride Steuerung
+
+Ein zentrales Problem videobasierter Blickerfassungssysteme ist die sogenannte Head-Coupling-Problematik. Bewegt der Nutzer seinen Kopf, verändern sich die relativen Positionen der Iris im Kamerabild, ohne dass sich der eigentliche Fokuspunkt auf dem Monitor zwingend geändert hat. In „EyeAssist“ wird diese Herausforderung durch einen Paradigmenwechsel gelöst. Anstatt die Kopfpose mühsam aus den Blickdaten herauszurechnen, wird die Kopfpose selbst zum primären Steuerungssignal für die Cursorpositionierung erhoben.
+
+=== Die Nasenspitze als stabiler Referenzpunkt
+
+Wie bereits erwähnt wurde für die Cursorsteuerung die Nasenspitze, Landmark 1 im MediaPipe Face Mesh, als zentraler Ankerpunkt gewählt. Im Gegensatz zur Iris, die durch Sakkaden und unbewusste Mikrobewegungen ständig ihre Position ändert, stellt die Nasenspitze einen anatomisch fixierten Punkt dar, der die globale Bewegung des Schädels repräsentiert.
+
+Das System erzeugt intern ein virtuelles Koordinaten-Fadenkreuz, dessen Ursprung bei der Kalibrierung (vgl. Kapitel 3.2.1) auf die Nasenspitze gelegt wird. Jede Abweichung von dieser Ruheposition wird als Absicht zur Cursorbewegung interpretiert. Dieser Ansatz hat zwei entscheidende Vorteile:
+
+1. *Geringer Jitter:* Die Detektion der Nasenspitze durch das Face Mesh Modell ist hochgradig stabil und weist ein deutlich geringeres Signalrauschen auf als die Iris-Extraktion.
+2. *Ergonomie:* Durch kleine, kontrollierte Kopfbewegungen können auch große Distanzen auf dem Bildschirm überbrückt werden, ohne die Augenmuskulatur zu überanstrengen.
+
+=== Geometrische Transformation der Kopfpose
+
+Um die Kopfbewegung in Bildschirmkoordinaten zu übersetzen, nutzt das System die relative Verschiebung im zweidimensionalen Raum. Die Herausforderung besteht darin, dass eine reine 2D-Verschiebung der Nase im Kamerabild keine Rückschlüsse auf die tatsächliche Rotation des Kopfes (Yaw und Pitch) zulässt.
+
+In der aktuellen Implementierung (basierend auf Experiment 4) wird ein linearer Zusammenhang zwischen dem Delta der Nasenposition und der Cursor-Pixel-Position hergestellt. Dabei wird die horizontale Verschiebung (X) direkt auf die Monitorbreite und die vertikale Verschiebung (Y) auf die Monitorhöhe abgebildet.
+
+//[CODE-SCHNIPSEL 4: Berechnung des Kopf-Deltas in tracker_engine.py]
+//Hier einfügen: Die Logik, die das aktuelle Landmark der Nasenspitze extrahiert und das raw_delta zur Referenzposition berechnet.
+
+=== Hybride Interaktionslogik
+
+Die Trennung von Navigation (Kopf) und Aktion (Blick/Mimik) bildet den Kern der barrierefreien Nutzbarkeit. In Kapitel 3.1 wurde die Pipeline bereits skizziert. Technisch wird dies in der Application-Klasse durch eine asynchrone Verarbeitung gelöst:
+
+- Der Head-Pose-Thread liefert kontinuierlich die Cursor-Koordinaten an den MouseController.
+- Der Gesture-Recognizer fungiert als Interrupt-Geber. Sobald ein vordefiniertes Muster (z. B. das Schließen des rechten Auges bei gleichzeitig stabiler Kopfpose) erkannt wird, wird ein Klick-Event injiziert.
+
+== Signalverarbeitung: Glättung und Latenz-Optimierung
+
+Die Rohdaten der Landmark-Extraktion sind für eine direkte Cursorsteuerung ungeeignet. Selbst bei Verwendung hochwertiger 4K-Webcams (vgl. Experiment 3) unterliegt das Signal einem stetigen Rauschen, das durch Sensor-Artefakte, wechselnde Lichtverhältnisse und das natürliche Mikrozittern der menschlichen Muskulatur verursacht wird. Ohne eine effektive Filterung würde dies zu einem instabilen Cursor führen, der präzise Interaktionen (z. B. das Treffen kleiner Schaltflächen) unmöglich macht.
+
+=== Der Trade-off: Stabilität vs. Reaktivität
+
+Bei der Glättung von Steuerungssignalen steht die Softwareentwicklung vor einem klassischen Zielkonflikt, dem sogenannten Trade-off zwischen *Jitter* und *Latenz*:
+
+1. *Hohe Filterung (Stabilität):* Ein starker Filter, wie beispielsweise ein gleitender Durchschnitt über viele Frames, eliminiert das Rauschen größtenteils. Der Cursor wirkt stabil, reagiert jedoch träge auf Richtungswechsel. Diese zeitliche Verzögerung, also *Latenz*, führt dazu, dass der Nutzer sein Ziel "überschießt", da die visuelle Rückmeldung der tatsächlichen Kopfbewegung hinterherhinkt.
+2. *Geringe Filterung (Reaktivität):* Das System reagiert unmittelbar auf jede Bewegung. Der Cursor wirkt agil, „springt“ jedoch aufgrund des Rauschens unkontrolliert um den eigentlichen Fokuspunkt herum, also *Jitter*, was zu einer schnellen visuellen Ermüdung führt.
+
+In den frühen Iterationen von jedem Experiment in Kapitel 4 wurde ein einfacher Moving Average Filter eingesetzt. Dieser erwies sich jedoch als unzureichend, da er die Latenz linear zur Stabilität erhöht.
+
+=== Implementierung des adaptiven One-Euro-Filters
+
+Um diesen Zielkonflikt zu lösen, wurde in der finalen Implementierung der One-Euro-Filter (vgl. Kapitel 2.2.2) integriert. Hierbei handelt es sich um einen adaptiven Tiefpassfilter erster Ordnung, der seine Grenzfrequenz $f_c$ (vgl. Kapitel 2.2.2) dynamisch an die Geschwindigkeit der Bewegung anpasst.
+
+Die mathematische Grundlage basiert auf der Annahme, dass der Mensch bei langsamen Bewegungen (Präzisionsphase) eine hohe Filterung benötigt, während er bei schnellen Bewegungen (Targetingphase) eine geringe Latenz priorisiert. Die Berechnung der adaptiven Grenzfrequenz folgt der in Kapitel 2.2.2 beschriebenen Formel.
+
+//[CODE-SCHNIPSEL 6: Implementierung des One-Euro-Filters in math_helpers.py oder mouse_controller.py]
+//Hier einfügen: Die Klasse OneEuroFilter mit den Methoden zur Berechnung des Alphas und der Filterung des Signals.
+
+Die Leistungsfähigkeit des Filters hängt maßgeblich von der Wahl der Parameter $f_c_"min"$ und $beta$ ab (vgl. Kapitel 2.2.2). Im Kontext der barrierefreien PC-Steuerung wurden diese Werte experimentell ermittelt, um den spezifischen Bewegungscharakteristiken der Kopfsteuerung gerecht zu werden:
+
+- $f_c_"min"$ (Default: 1.0): Ein niedriger Wert sorgt für einen ruhigeren Cursor im Stillstand. Dies ist essenziell für Nutzer mit motorischen Einschränkungen, die Schwierigkeiten haben, den Kopf über längere Zeit völlig ruhig zu halten.
+- $beta$ (Default: 0.007): Dieser Wert steuert, wie schnell der Filter bei Bewegung „aufmacht“. Ein zu hoher Wert würde den Jitter während der Bewegung wieder verstärken, ein zu niedriger Wert würde sich bei schnellen Kopfdrehungen „schwerfällig“ anfühlen.
+
+Durch diese adaptive Filterung erreicht das System ein „organisches“ Gefühl: Der Cursor folgt schnellen Bewegungen verzögerungsfrei über den Bildschirm und rastet förmlich ein, sobald die Bewegung langsamer wird.
+
+=== Umgang mit Ausreißern (Outlier Detection)
+
+Zusätzlich zur Filterung implementiert die Pipeline eine Validierungslogik für die Landmark-Daten. Wenn MediaPipe für einen einzelnen Frame eine sprunghafte Änderung der Nasenposition meldet, beispielsweise durch eine plötzliche Lichtreflexion oder kurzes Verdecken des Gesichts, die physikalisch unmöglich ist, wird dieser Frame verworfen (Outlier Rejection). Das System nutzt in diesem Fall die letzte bekannte gültige Position und wartet auf das nächste stabile Signal. Dies verhindert, dass der Cursor bei kurzen Tracking-Unterbrechungen unkontrolliert an den Bildschirmrand springt.
+
+//[CODE-SCHNIPSEL 7: Integration des Filters in den Datenfluss des MouseController]
+//Hier einfügen: Die Stelle in der update()-Methode, an der die rohen Delta-Werte durch den self.filter_x und self.filter_y geschleust werden.
+
+== Versuchsrahmen: Hardware, Positionierung, Testblauf
+
+Die im Rahmen dieser Arbeit durchgeführten Experimente (vgl. Kapitel 4) basieren auf einem standardisierten Versuchsaufbau. Ziel dieses Rahmens ist es, die Reproduzierbarkeit der Ergebnisse zu gewährleisten und eine objektive Vergleichbarkeit zwischen verschiedenen Kameratypen und Tracking-Algorithmen zu ermöglichen. Der Fokus liegt dabei auf einer praxisnahen Umgebung, die einem typischen Büroarbeitsplatz entspricht.
+
+=== Technische Infrastruktur (Hardware und Software)
+
+Um die Eignung verschiedener Preis- und Qualitätssegmente zu untersuchen, wurden drei unterschiedliche Kameratypen ausgewählt. Diese repräsentieren das Spektrum gängiger Consumer-Hardware:
+
+1. *Integrierte Lösung:* BisonCam NB Pro (Full HD). Diese Kamera steht stellvertretend für Standard-Laptop-Webcams mit meist kleinen Sensoren und begrenzter Dynamik.
+
+2. *Dedizierte Mittelklasse:* Razer Kiyo Pro (Full HD). Eine externe USB-Webcam, die durch einen größeren Sensor (Sony STARVIS) auch bei schwierigen Lichtverhältnissen stabilere Bilder liefern soll.
+
+3. *High-End Consumer:* Logitech Brio 4K. Um eine Konsistenz in der Verarbeitungskette zu wahren, wurde der 4K-Stream systemseitig auf 1920×1080 Pixel herunterskaliert. Dies erlaubt den Vergleich, ob die höhere optische Güte des 4K-Sensors (trotz identischer Auflösung in der Software) den Jitter reduziert.
+
+Die Rechenlast wird von einem System der aktuellen Generation getragen (Intel Core i7 9700H, 14. Gen, 32 GB RAM), um sicherzustellen, dass die gemessenen Latenzen (vgl. Kapitel 3.4) nicht durch Hardware-Engpässe verfälscht werden. Die Software-Umgebung basiert auf einem stabilen Stack aus Python 3.11 und MediaPipe 0.10.20, wobei PyAutoGUI für die hardwarenahe Maus-Injektion unter Windows 11 zum Einsatz kommt.
+
+=== Räumliche Konfiguration und Beleuchtung
+
+Da videobasiertes Tracking hochgradig sensitiv auf externe Parameter reagiert, wurden die Umgebungsbedingungen gemäß gängiger Ergonomie-Standards für Bildschirmarbeitsplätze fixiert:
+
+- *Arbeitsabstand:* Der Proband befindet sich in einem Abstand von ca. 50–60 cm zum Display. Dies entspricht der Distanz, in der die MediaPipe-Landmarks eine ausreichende Pixeldichte für die Iris-Erkennung aufweisen.
+
+- *Beleuchtungsszenario:* Die Messungen fanden bei diffusem Tageslicht ohne direkte Sonneneinstrahlung auf den Kamerasensor statt. Die Beleuchtungsstärke am Gesicht betrug ca. 300–500 Lux, was einer normgerechten Bürobeleuchtung (DIN EN 12464-1) entspricht.
+
+- *Positionierung:* Die Kameras wurden jeweils zentral auf der vertikalen Mittelachse des Monitors platziert, um Parallaxenfehler bei der Kopfpose-Kompensation (vgl. Kapitel 3.3) zu minimieren.
+
+=== Standardisierter Testablauf
+
+Jedes der fünf Experimente folgt einem strikten Protokoll, um subjektive Verzerrungen zu minimieren:
+
+1. *Initialisierung:* Start der Pipeline und Durchführung der spezifischen Kalibrierung. Während in den frühen Experimenten eine 9-Punkt-Blickkalibrierung genutzt wurde, erfolgt in den späteren Ansätzen eine Ein-Punkt-Zentrierung der Kopfpose (Details zur Differenzierung der Methoden folgen in Kapitel 4).
+
+2. *Quantitative Aufgabe (Target Acquisition):* Für Experiment 1 bis 3 muss der Nutzer nacheinander fünf Zielkreise mit einem Durchmesser von 50 Pixeln ansteuern. Diese befinden sich in den vier Eckpunkten sowie im Zentrum des Bildschirms. Ein Ziel gilt als „getroffen“, wenn der Cursor innerhalb eines Radius von 20 Pixeln (angepasster Akzeptanz-Radius) für mindestens 500 ms verweilt. Für Experiment 4 und 5 wird dieser Schritt übersprungen, weil eine solche Kalibrierung für Headtracking nicht notewendig ist.
+
+3. *Qualitative Exploration:* Im Anschluss erfolgt eine 5-minütige freie Nutzung. Hierbei werden alltägliche Aufgaben wie das Scrollen in Nachrichtenportalen oder das Bedienen von Dropdown-Menüs im Browser simuliert.
+
+4. *Datenerfassung:* Nach Abschluss jedes Durchgangs wird ein standardisierter Evaluationsbogen ausgefüllt. Hierbei werden Präzision, Jitter-Empfinden und die wahrgenommene ergonomische Belastung auf einer Likert-Skala (1–5) bewertet.
+
+// [Tabellenvorschlag: Übersichtstabelle mit Hardware-Spezifikationen und Versuchsparametern für alle Experimente]
+
+== Evaluationskriterien: Objektive und subjektive Metriken
+
+Um die Eignung des hybriden Systems für eine barrierefreie Steuerung wissenschaftlich fundiert bewerten zu können, wird ein multidimensionaler Evaluationsansatz gewählt. Da die Forschungsfrage sowohl nach der „akzeptablen Präzision“ als auch nach der „Nutzbarkeit“ unter realistischen Bedingungen verlangt, müssen sowohl mathematisch messbare Werte als auch das menschliche Empfinden berücksichtigt werden.
+
+=== Objektive Metriken (Quantitative Analyse)
+
+Die technische Leistungsfähigkeit wird anhand von drei Kernmetriken bestimmt, die während der Experimente 1 bis 5 automatisiert durch das System protokolliert werden:
+
+1. *Stationäre Präzision und Jitter ($"RMS"_"error"$):* Hierbei wird gemessen, wie stark der Cursor fluktuiert, während der Nutzer versucht, einen fixen Punkt (z. B. Bildschirmmitte) zu halten. Der Jitter wird als Standardabweichung der Cursor-Koordinaten in Pixeln definiert. Ein niedriger $"RMS"$-Wert ist entscheidend, um kleine Schaltflächen sicher ansteuern zu können.
+2. *Time-to-Target (TTT):* Diese Metrik misst die Zeitspanne zwischen dem Erscheinen eines Ziels und der erfolgreichen Ausführung einer Aktion (z. B. Linksklick). Sie gibt Aufschluss über die Effizienz der hybriden Steuerung im Vergleich zum klassischen Eye-Tracking.
+3. *System-Latenz und Framerate:* Die Durchlaufzeit eines Frames durch die gesamte Pipeline, von capture bis injection, wird in Millisekunden gemessen. Eine konstante Framerate von $>= 24$ #gls("FPS") ist das Ziel, um ein flüssiges Feedback zu garantieren.
+
+//[CODE-SCHNIPSEL 8: Logging-Mechanismus für Metriken]
+//Hier einfügen: Ein kleiner Ausschnitt, wie Zeitstempel oder Cursor-Deltas für die spätere Auswertung in eine CSV oder Liste geschrieben werden.
+
+=== Subjektive Metriken (Qualitative Analyse)
+
+Da eine barrierefreie Steuerung nur dann erfolgreich ist, wenn sie über längere Zeit ohne physische oder kognitive Überlastung genutzt werden kann, kommen subjektive Kriterien zum Einsatz. Mangels einer großen Probandengruppe basiert diese Arbeit auf einer systematischen Selbstevaluation durch den Entwickler (Guerilla-Usability-Testing), ergänzt durch folgende Kriterien:
+
+1. *Physische Ergonomie (Fatigue):* Bewertung der Beanspruchung der Nackenmuskulatur (beim Head-Tracking) im Vergleich zur Augenermüdung (beim reinen Eye-Tracking). Besonders kritisch ist hierbei das „Midas-Touch-Problem“ (vgl. Kapitel 2.3) und die Anspannung beim Halten der Kopfpose.
+2. *Erlernbarkeit (Learning Curve):* Wie intuitiv ist die Trennung von Navigation (Kopf) und Aktion (Mimik)? Es wird dokumentiert, wie viele Versuche notwendig sind, um eine fehlerfreie Bedienung eines Standard-Browsers zu ermöglichen.
+3. *Anforderungs-Score:* Eine vereinfachte subjektive Bewertung der mentalen und physischen Anstrengung auf einer Skala von 1 bis 5. Dies dient dazu, den „Sweet Spot“ der Sensitivitätseinstellungen (vgl. Kapitel 3.2.3) zu validieren.
+
+=== Definition der „akzeptablen Präzision“
+
+Für diese Arbeit wird eine Präzision dann als „akzeptabel“ definiert, wenn Standard-UI-Elemente eines Betriebssystems, wie der Schließen-Button eines Fensters, ca. $20 times 20$ Pixel ohne mehrfache Korrekturversuche innerhalb von 2 Sekunden getroffen werden können. Ein Jitter-Radius von mehr als 20 Pixeln im Ruhezustand wird hingegen als unzureichend eingestuft, da er die kognitive Last bei der Zielfokussierung massiv erhöht.
+
+= Experimente & Ergebnisse
+
+== Eye-Tracking Laptop Full HD
+
+== Eye-Tracking externe Full HD
+
+== Eye-Tracking externe 4K
+
+== Head-Tracking mit Nase als Cursor
+
+== Ganzheitliches Head-Tracking
+
+== Vergleich/Zusammenfassung
+
+= Diskussion & finale Lösung
+
+== Interpretation der Ergebnisse im Kontext Barrierefreiheit
+
+== Begründete Designentscheidung: Hybridsteuerung (Head-Tracking für Cursor, Eye/Mimik für Aktionen)
+
+== Konzept der vollständigen Anwendung: Funktionsumfang, Bedienlogik, Konfigurierbarkeit & Usability-Aspekte
+
+== Grenzen der Lösung und Risiken
+
+= Fazit & Ausblick
+
+== Beantwortung der Forschungsfrage
+
+== Wichtigste Erkenntnisse
+
+== Ausblick & Mögliche Verbesserungen
+
+// Mehrere Bildschirme, Monitorerkennung und dadurch anpassung der Schaltflächen in der Nähe des Cursors. Kontinuierliche Kalbirierung bei jedem Klick, damit keine manuelle Rekalibrierung stattfinden muss. Implementierung eigenes Machine Learnings (Sehr Zeit- und Kostenintensiv). Hardware Anpassung (Sehr viel Teurer): Infrarot Kamera, oder spezifisch entwickelte Hardware für Eyetracking. (Dadurch ist aber der Sinn der Arbeit verfehlt.) Andere Smoothing Alogorithmen systematisch testen.
+
+// AUßERDEM WICHTIG: Mehrere Nutzertests mit Fragebogen einholen, damit Usabiliy verbessert werden kann.
+
+/*= Erläuterungen
+
+Im folgenden werden einige nützliche Elemente und Funktionen zum Erstellen von Typst-Dokumenten mit diesem Template erläutert.
+
+== Ausdrücke und Abkürzungen
+
+Verwende die `gls`-Funktion, um Ausdrücke aus dem Glossar einzufügen, die dann dorthin verlinkt werden. Ein Beispiel dafür ist: 
+
+Im diesem Kapitel wird eine #gls("Softwareschnittstelle") beschrieben. Man spricht in diesem Zusammenhang auch von einem #gls("API"). Die Schnittstelle nutzt Technologien wie das #gls("HTTP").
+
+Das Template nutzt das `glossarium`-Package für solche Glossar-Referenzen. In der zugehörigen #link("https://typst.app/universe/package/glossarium/", "Dokumentation") werden noch weitere Varianten für derartige Querverweise gezeigt. Dort ist auch im Detail erläutert, wie das Glossar aufgebaut werden kann.
+
+
+== Listen
+
+Es gibt Aufzählungslisten oder nummerierte Listen:
+
+- Dies
+- ist eine
+- Aufzählungsliste
+
++ Und
++ hier wird
++ alles nummeriert.
+
+== Abbildungen und Tabellen
+
+Abbildungen und Tabellen (mit entsprechenden Beschriftungen) werden wie folgt erstellt.
+
+=== Abbildungen
+
+#figure(caption: "Eine Abbildung", image(width: 4cm, "assets/ts.svg"))
+
+=== Tabellen
+
+#figure(
+  caption: "Eine Tabelle",
+  table(
+    columns: (1fr, 50%, auto),
+    inset: 10pt,
+    align: horizon,
+    table.header(
+      [],
+      [*Area*],
+      [*Parameters*],
+    ),
+
+    text("cylinder.svg"),
+    $ pi h (D^2 - d^2) / 4 $,
+    [
+      $h$: height \
+      $D$: outer radius \
+      $d$: inner radius
+    ],
+
+    text("tetrahedron.svg"), $ sqrt(2) / 12 a^3 $, [$a$: edge length],
+  ),
+)<table>
+
+== Programm Quellcode
+
+Quellcode mit entsprechender Formatierung wird wie folgt eingefügt:
+
+#figure(
+  caption: "Ein Stück Quellcode",
+  sourcecode[```ts
+    const ReactComponent = () => {
+      return (
+        <div>
+          <h1>Hello World</h1>
+        </div>
+      );
+    };
+
+    export default ReactComponent;
+    ```],
+)
+
+
+== Verweise
+
+Für Literaturverweise verwendet man die `cite`-Funktion oder die Kurzschreibweise mit dem \@-Zeichen:
+- `#cite(form: "prose", <iso18004>)` ergibt: \ #cite(form: "prose", <iso18004>)
+- Mit `@iso18004` erhält man: @iso18004
+
+Tabellen, Abbildungen und andere Elemente können mit einem Label in spitzen Klammern gekennzeichnet werden (die Tabelle oben hat z.B. das Label `<table>`). Sie kann dann mit `@table` referenziert werden. Das ergibt im konkreten Fall: @table
+
+= Fazit
+
+#lorem(50)
+
+#lorem(120)
+
+#lorem(80)*/
+
