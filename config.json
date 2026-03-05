@@ -11,7 +11,10 @@
         "refine_landmarks": true,
         "min_detection_confidence": 0.5,
         "min_tracking_confidence": 0.5,
-        "static_image_mode": false
+        "static_image_mode": false,
+        "pose_mincutoff": 1.5,
+        "pose_beta": 0.05,
+        "pose_dcutoff": 1.0
     },
     "calibration": {
         "frames_required": 30,
@@ -20,8 +23,8 @@
         "calibration_delay_ms": 0
     },
     "mouse": {
-        "sensitivity_x": 1,
-        "sensitivity_y": 1,
+        "sensitivity_x": 0.4,
+        "sensitivity_y": 2.0,
         "movement_threshold": 0.002,
         "smoothing_buffer_size": 4,
         "invert_x": false,
@@ -32,7 +35,7 @@
         "beta": 0.007,
         "d_cutoff": 1.0,
         "pixel_deadzone": 5,
-        "max_angle": 30.0
+        "max_angle": 15.0
     },
     "gesture_actions": {
         "mouth_open": {

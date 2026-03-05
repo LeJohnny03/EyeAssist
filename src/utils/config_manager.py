@@ -22,7 +22,10 @@ class ConfigManager:
                 'refine_landmarks': True,
                 'min_detection_confidence': 0.5,
                 'min_tracking_confidence': 0.5,
-                'static_image_mode': False
+                'static_image_mode': False,
+                'pose_mincutoff': 1.5,
+                'pose_beta': 0.05,
+                'pose_dcutoff': 1.0
             },
 
             # === Kalibrierung ===

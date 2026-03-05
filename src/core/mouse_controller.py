@@ -143,3 +143,9 @@ class MouseController:
             self.sensitivity_x = sensitivity_x
         if sensitivity_y is not None:
             self.sensitivity_y = sensitivity_y
+            
+    def center_mouse(self):
+        """Setzt Maus in die Bildschirmmitte – wird direkt nach Kalibrierung aufgerufen."""
+        import pyautogui
+        self.smoother.clear()
+        pyautogui.moveTo(self.screen_w // 2, self.screen_h // 2)
