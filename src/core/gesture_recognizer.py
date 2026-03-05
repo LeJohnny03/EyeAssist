@@ -72,8 +72,8 @@ class GestureRecognizer:
         # Kopfneigung links
         if 'head_tilt_left' in self.gesture_actions and self.gesture_actions['head_tilt_left']['enabled']:
             tilt = self.detect_head_tilt(
-                landmarks_data.get('nose_tip'),
-                landmarks_data.get('reference_nose')
+                landmarks_data.get('nose_tip'),       # Nase bleibt für Tilt-Detection
+                landmarks_data.get('reference_gaze')  # Referenz aus Gaze-Kalibrierung
             )
             if tilt < 0 and self._check_gesture_trigger('head_tilt_left', abs(tilt)):
                 detected_actions.append(self.gesture_actions['head_tilt_left']['action'])

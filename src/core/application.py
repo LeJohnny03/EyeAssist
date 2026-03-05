@@ -7,7 +7,7 @@ from gui.overlay import Overlay
 from utils.camera_helper import CameraHelper
 import cv2
 
-class HeadTrackingApp:
+class EyeTrackingApp:
     """Haupt-Tracking-Anwendung (Backend)"""
     def __init__(self, config):
         self.config = config
@@ -36,7 +36,7 @@ class HeadTrackingApp:
         
         # OpenCV Fenster erstellen wenn Vorschau aktiviert
         if self.show_preview:
-            cv2.namedWindow('Head Tracking Preview')
+            cv2.namedWindow('Eye Tracking Preview')
         
         self.run_main_loop()
         return True
@@ -66,28 +66,25 @@ class HeadTrackingApp:
             if self.overlay.show_landmarks:
                 self.tracker.draw_landmarks(frame, face_landmarks)
             
-            nose_tip = self.tracker.get_nose_tip()
-            upper_lip = self.tracker.get_upper_lip()
-            lower_lip = self.tracker.get_lower_lip()
-            
-            # Kalibrierung
+            gaze_point = self.tracker.get_gaze_point()
+            upper_lip  = self.tracker.get_upper_lip()
+            lower_lip  = self.tracker.get_lower_lip()
+
             if not self.calibration_wizard.is_complete:
-                if self.calibration_wizard.update(nose_tip):
+                if self.calibration_wizard.update(gaze_point):  # Kalibrierung auf Gaze
                     ref_pos = self.calibration_wizard.get_reference_position()
                     if ref_pos:
                         self.mouse_controller.set_reference_position(ref_pos[0], ref_pos[1])
                 self.calibration_wizard.draw_progress(frame)
-            
-            # Maussteuerung nach Kalibrierung
-            if self.calibration_wizard.is_complete and nose_tip:
-                self.mouse_controller.move_mouse(nose_tip[0], nose_tip[1])
-                
-                # Gesten-Erkennung mit allen Landmarks
+
+            if self.calibration_wizard.is_complete and gaze_point:
+                self.mouse_controller.move_mouse(gaze_point[0], gaze_point[1])
                 landmarks_data = {
-                    'nose_tip': nose_tip,
-                    'upper_lip': upper_lip,
-                    'lower_lip': lower_lip,
-                    'reference_nose': self.calibration_wizard.get_reference_position()
+                    'gaze_point': gaze_point,
+                    'nose_tip':   self.tracker.get_nose_tip(),  # für Kopfneigungs-Gesten
+                    'upper_lip':  upper_lip,
+                    'lower_lip':  lower_lip,
+                    'reference_gaze': self.calibration_wizard.get_reference_position()
                 }
                 
                 actions = self.gesture_recognizer.process_gestures(landmarks_data)
@@ -96,7 +93,7 @@ class HeadTrackingApp:
                     self.overlay.draw_click_indicator(frame)
                 
                 # Debug-Overlay
-                delta_x, delta_y = self.mouse_controller.get_delta(nose_tip[0], nose_tip[1])
+                delta_x, delta_y = self.mouse_controller.get_delta(gaze_point[0], gaze_point[1])
                 mouth_opening = abs(upper_lip[1] - lower_lip[1]) if upper_lip and lower_lip else 0
                 self.overlay.draw_tracking_info(
                     frame, delta_x, delta_y, mouth_opening, 

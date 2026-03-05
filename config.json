@@ -20,18 +20,18 @@
         "calibration_delay_ms": 0
     },
     "mouse": {
-        "sensitivity_x": 8.0,
+        "sensitivity_x": 10.0,
         "sensitivity_y": 10.0,
         "movement_threshold": 0.002,
         "smoothing_buffer_size": 4,
-        "invert_x": false,
-        "invert_y": false,
+        "invert_x": true,
+        "invert_y": true,
         "failsafe": false,
         "pause_duration": 0.001,
-        "min_cutoff": 1.0,
-        "beta": 0.007,
+        "min_cutoff": 0.5,
+        "beta": 0.003,
         "d_cutoff": 1.0,
-        "pixel_deadzone": 5
+        "pixel_deadzone": 8
     },
     "gesture_actions": {
         "mouth_open": {

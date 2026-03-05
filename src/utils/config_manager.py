@@ -35,18 +35,18 @@ class ConfigManager:
 
             # === Maussteuerung ===
             'mouse': {
-                'sensitivity_x': 5,
-                'sensitivity_y': 6,
+                'sensitivity_x': 15,
+                'sensitivity_y': 18,
                 'movement_threshold': 0.002,
                 'smoothing_buffer_size': 3,
                 'invert_x': False,
                 'invert_y': False,
                 'failsafe': False,
                 'pause_duration': 0.001,
-                'min_cutoff': 1.0,
-                'beta': 0.007,
+                'min_cutoff': 0.5,
+                'beta': 0.003,
                 'd_cutoff': 1.0,
-                'pixel_deadzone': 5
+                'pixel_deadzone': 8
             },
 
             # === Gesten-Mapping ===

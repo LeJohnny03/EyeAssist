@@ -5,7 +5,7 @@ import threading
 from gui.windows.settings_window import SettingsWindow
 from gui.windows.gesture_mapping_window import GestureMappingWindow
 from gui.windows.preview_window import PreviewWindow
-from core.application import HeadTrackingApp
+from core.application import EyeTrackingApp
 
 class MainWindow:
     """Hauptfenster der Anwendung"""
@@ -152,7 +152,7 @@ class MainWindow:
         """Startet Head-Tracking"""
         try:
             # Erstelle Tracking-App
-            self.tracking_app = HeadTrackingApp(self.config)
+            self.tracking_app = EyeTrackingApp(self.config)
 
             # Starte in separatem Thread
             self.tracking_thread = threading.Thread(target=self._run_tracking, daemon=True)

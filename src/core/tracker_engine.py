@@ -2,6 +2,9 @@
 import cv2
 import mediapipe as mp
 
+LEFT_IRIS_CENTER  = 468
+RIGHT_IRIS_CENTER = 473
+
 class TrackerEngine:
     """Verwaltet MediaPipe Face Mesh Tracking"""
     def __init__(self, config):
@@ -54,6 +57,24 @@ class TrackerEngine:
     def get_lower_lip(self):
         """Gibt untere Lippen-Position zurück (Landmark 14)"""
         return self.get_landmark_position(14)
+    
+    def get_left_iris(self):
+        """Gibt den Mittelpunkt der linken Iris zurück (Landmark 468)"""
+        return self.get_landmark_position(LEFT_IRIS_CENTER)
+
+    def get_right_iris(self):
+        """Gibt den Mittelpunkt der rechten Iris zurück (Landmark 473)"""
+        return self.get_landmark_position(RIGHT_IRIS_CENTER)
+
+    def get_gaze_point(self):
+        """Gibt den gemittelten Gaze-Punkt beider Iriden zurück"""
+        left  = self.get_left_iris()
+        right = self.get_right_iris()
+        if left and right:
+            return ((left[0] + right[0]) / 2,
+                    (left[1] + right[1]) / 2,
+                    (left[2] + right[2]) / 2)
+        return left or right  # Fallback auf ein Auge
 
     def draw_landmarks(self, frame, face_landmarks):
         """Zeichnet Face Mesh auf Frame"""
