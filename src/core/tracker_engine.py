@@ -2,11 +2,16 @@
 import cv2
 import mediapipe as mp
 
-LEFT_IRIS_CENTER  = 468
-RIGHT_IRIS_CENTER = 473
-
 class TrackerEngine:
     """Verwaltet MediaPipe Face Mesh Tracking"""
+
+    LEFT_IRIS_CENTER = 468
+    RIGHT_IRIS_CENTER = 473
+    LEFT_EYE_INNER   = 133
+    LEFT_EYE_OUTER   = 33
+    RIGHT_EYE_INNER  = 362
+    RIGHT_EYE_OUTER  = 263
+
     def __init__(self, config):
         self.config = config
         self.mp_face_mesh = mp.solutions.face_mesh
@@ -20,10 +25,9 @@ class TrackerEngine:
         self.mp_drawing = mp.solutions.drawing_utils
         self.current_landmarks = None
 
-        # Farbe für Landmarks aus Config
         landmark_color = config.get('colors.landmarks', [0, 255, 0])
         self.landmark_drawing_spec = self.mp_drawing.DrawingSpec(
-            color=tuple(landmark_color), 
+            color=tuple(landmark_color),
             thickness=1
         )
 
@@ -57,24 +61,32 @@ class TrackerEngine:
     def get_lower_lip(self):
         """Gibt untere Lippen-Position zurück (Landmark 14)"""
         return self.get_landmark_position(14)
-    
-    def get_left_iris(self):
-        """Gibt den Mittelpunkt der linken Iris zurück (Landmark 468)"""
-        return self.get_landmark_position(LEFT_IRIS_CENTER)
 
-    def get_right_iris(self):
-        """Gibt den Mittelpunkt der rechten Iris zurück (Landmark 473)"""
-        return self.get_landmark_position(RIGHT_IRIS_CENTER)
+    def get_iris_delta(self):
+        """
+        Gibt die Iris-Abweichung relativ zum jeweiligen Augenmittelpunkt zurück.
+        Liefert kleine Werte (~0.01–0.03) – nur für Feinjustierung geeignet.
+        Gibt (0.0, 0.0) zurück wenn Iris-Landmarks nicht verfügbar sind.
+        Benötigt refine_landmarks=True in der Config.
+        """
+        left_iris  = self.get_landmark_position(self.LEFT_IRIS_CENTER)
+        right_iris = self.get_landmark_position(self.RIGHT_IRIS_CENTER)
+        l_inner    = self.get_landmark_position(self.LEFT_EYE_INNER)
+        l_outer    = self.get_landmark_position(self.LEFT_EYE_OUTER)
+        r_inner    = self.get_landmark_position(self.RIGHT_EYE_INNER)
+        r_outer    = self.get_landmark_position(self.RIGHT_EYE_OUTER)
 
-    def get_gaze_point(self):
-        """Gibt den gemittelten Gaze-Punkt beider Iriden zurück"""
-        left  = self.get_left_iris()
-        right = self.get_right_iris()
-        if left and right:
-            return ((left[0] + right[0]) / 2,
-                    (left[1] + right[1]) / 2,
-                    (left[2] + right[2]) / 2)
-        return left or right  # Fallback auf ein Auge
+        if not all([left_iris, right_iris, l_inner, l_outer, r_inner, r_outer]):
+            return 0.0, 0.0
+
+        l_center_x = (l_inner[0] + l_outer[0]) / 2
+        l_center_y = (l_inner[1] + l_outer[1]) / 2
+        r_center_x = (r_inner[0] + r_outer[0]) / 2
+        r_center_y = (r_inner[1] + r_outer[1]) / 2
+
+        delta_x = ((left_iris[0] - l_center_x) + (right_iris[0] - r_center_x)) / 2
+        delta_y = ((left_iris[1] - l_center_y) + (right_iris[1] - r_center_y)) / 2
+        return delta_x, delta_y
 
     def draw_landmarks(self, frame, face_landmarks):
         """Zeichnet Face Mesh auf Frame"""

@@ -5,14 +5,14 @@ import threading
 from gui.windows.settings_window import SettingsWindow
 from gui.windows.gesture_mapping_window import GestureMappingWindow
 from gui.windows.preview_window import PreviewWindow
-from core.application import EyeTrackingApp
+from core.application import HybridTrackingApp
 
 class MainWindow:
     """Hauptfenster der Anwendung"""
     def __init__(self, config):
         self.config = config
         self.root = tk.Tk()
-        self.root.title("Head Tracking Mouse Control")
+        self.root.title("Hybrid Tracking Mouse Control")
         self.root.geometry("500x400")
         self.root.resizable(False, False)
 
@@ -41,7 +41,7 @@ class MainWindow:
 
         title_label = tk.Label(
             header_frame, 
-            text="Head Tracking Mouse Control",
+            text="Hybrid Tracking Mouse Control",
             font=("Arial", 18, "bold"),
             bg="#2c3e50",
             fg="white"
@@ -152,7 +152,7 @@ class MainWindow:
         """Startet Head-Tracking"""
         try:
             # Erstelle Tracking-App
-            self.tracking_app = EyeTrackingApp(self.config)
+            self.tracking_app = HybridTrackingApp(self.config)
 
             # Starte in separatem Thread
             self.tracking_thread = threading.Thread(target=self._run_tracking, daemon=True)
