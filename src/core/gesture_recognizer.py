@@ -1,6 +1,8 @@
 """Erweiterte Gesten-Erkennung mit konfigurierbaren Aktionen"""
 import pyautogui
 
+from utils import metrics_logger
+
 class GestureRecognizer:
     """Erkennt verschiedene Gesichts-Gesten und führt Aktionen aus"""
     def __init__(self, config):
@@ -43,7 +45,7 @@ class GestureRecognizer:
             return 0.0
         return nose_tip[0] - reference_nose[0]
 
-    def process_gestures(self, landmarks_data):
+    def process_gestures(self, landmarks_data, metrics_logger=None):
         """
         Verarbeitet alle Gesten und führt Aktionen aus
         landmarks_data: dict mit allen relevanten Landmark-Positionen
@@ -89,7 +91,7 @@ class GestureRecognizer:
 
         # Führe Aktionen aus
         for action in detected_actions:
-            self.execute_action(action)
+            self.execute_action(action, metrics_logger=metrics_logger)
 
         return detected_actions
 
@@ -109,10 +111,12 @@ class GestureRecognizer:
 
         return False
 
-    def execute_action(self, action):
+    def execute_action(self, action, metrics_logger=None):
         """Führt konfigurierte Aktion aus"""
         if action == 'left_click':
             pyautogui.click()
+            if metrics_logger is not None:
+                metrics_logger.click_registered(x=pyautogui.position()[0], y=pyautogui.position()[1])
         elif action == 'right_click':
             pyautogui.rightClick()
         elif action == 'double_click':

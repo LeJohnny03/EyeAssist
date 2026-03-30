@@ -1,4 +1,6 @@
 """Haupt-Applikationslogik – Hybrid Head+Eye Tracking Backend"""
+import pyautogui
+
 from core.tracker_engine import TrackerEngine
 from core.gesture_recognizer import GestureRecognizer
 from core.mouse_controller import MouseController
@@ -6,6 +8,7 @@ from gui.calibration_wizard import CalibrationWizard
 from gui.overlay import Overlay
 from utils.camera_helper import CameraHelper
 import cv2
+from utils.metrics_logger import MetricsLogger
 
 class HybridTrackingApp:
     """Haupt-Tracking-Anwendung mit Hybrid Head+Eye Tracking"""
@@ -18,6 +21,11 @@ class HybridTrackingApp:
         self.calibration_wizard = CalibrationWizard(config)
         self.overlay            = Overlay(config)
         self.camera             = CameraHelper(config)
+        
+        self.metrics = MetricsLogger(
+            output_dir=config.get('logging.output_dir', 'metrics'),
+            enabled=config.get('logging.enabled', True)
+        )
 
         self.running      = False
         self.show_preview = config.get('gui.show_preview_window', True)
@@ -38,6 +46,8 @@ class HybridTrackingApp:
     def run_main_loop(self):
         """Haupt-Event-Loop"""
         while self.running:
+            self.metrics.frame_start() 
+            
             ret, frame = self.camera.read_frame()
             if not ret:
                 break
@@ -47,8 +57,14 @@ class HybridTrackingApp:
             if self.show_preview:
                 cv2.imshow('Hybrid Tracking Preview', frame)
 
-            if cv2.waitKey(1) & 0xFF == 27:
+            key = cv2.waitKey(1) & 0xFF
+
+            if key == 27:                           # ESC → Beenden
                 break
+            if key == ord('t') or key == ord('T'):  # T → Neues Target spawnen
+                h, w = frame.shape[:2]
+                self.overlay.spawn_target(w, h)
+                self.metrics.target_appeared()
 
     def process_frame(self, frame):
         """Verarbeitet einzelnen Frame mit Hybrid Head+Eye Tracking"""
@@ -89,10 +105,12 @@ class HybridTrackingApp:
                     'reference_nose': self.calibration_wizard.get_reference_position()
                 }
 
-                actions = self.gesture_recognizer.process_gestures(landmarks_data)
+                actions = self.gesture_recognizer.process_gestures(landmarks_data, metrics_logger=self.metrics)
 
                 if actions:
                     self.overlay.draw_click_indicator(frame)
+                    if not self.metrics.has_active_target():      # ← neu
+                        self.overlay.dismiss_target()
 
                 # Debug-Overlay
                 delta_x, delta_y = self.mouse_controller.get_delta(nose_tip[0], nose_tip[1])
@@ -100,9 +118,13 @@ class HybridTrackingApp:
                 self.overlay.draw_tracking_info(
                     frame, delta_x, delta_y, mouth_opening,
                     self.mouse_controller.calibrated,
-                    iris_dx, iris_dy
+                    iris_dx, iris_dy,
+                    fps=self.metrics.get_fps()
                 )
+                self.metrics.frame_end(cursor_delta_x=delta_x, cursor_delta_y=delta_y, x=pyautogui.position()[0], y=pyautogui.position()[1])
+                
 
+        self.overlay.draw_target(frame)
         self.overlay.draw_controls(frame)
         return frame
 
@@ -118,4 +140,6 @@ class HybridTrackingApp:
         self.camera.release()
         if self.show_preview:
             cv2.destroyAllWindows()
+            
+        self.metrics.close() 
         self.tracker.close()

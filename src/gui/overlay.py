@@ -7,6 +7,38 @@ class Overlay:
         self.show_debug      = config.get('gui.show_debug_info', True)
         self.show_landmarks  = config.get('gui.show_landmarks', True)
         self.show_controls   = config.get('gui.show_controls_hint', True)
+        
+        # Target-Tracking-Status (für TTT-Metrik)
+        self._target_active = False
+        self._target_x      = 0
+        self._target_y      = 0
+        self._target_radius = 30
+
+
+    def spawn_target(self, frame_w: int, frame_h: int, margin: int = 60) -> tuple[int, int]:
+        """Spawnt ein Ziel an zufälliger Position. Gibt (x, y) zurück."""
+        import random
+        self._target_x = random.randint(margin, frame_w - margin)
+        self._target_y = random.randint(margin, frame_h - margin)
+        self._target_active = True
+        return self._target_x, self._target_y
+
+    def dismiss_target(self) -> None:
+        """Blendet das aktive Ziel aus (nach erfolgreichem Klick)."""
+        self._target_active = False
+
+    def draw_target(self, frame) -> None:
+        """Zeichnet das aktive Ziel (roter Kreis + Kreuz) auf den Frame."""
+        if not self._target_active:
+            return
+        cx, cy, r = self._target_x, self._target_y, self._target_radius
+        cv2.circle(frame, (cx, cy), r, (0, 0, 255), 2)
+        cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
+        cv2.line(frame, (cx - r, cy), (cx + r, cy), (0, 0, 255), 1)
+        cv2.line(frame, (cx, cy - r), (cx, cy + r), (0, 0, 255), 1)
+        cv2.putText(frame, "TARGET", (cx - 28, cy - r - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+
 
     def draw_visual_markers(self, frame, nose_coords, left_iris_coords, right_iris_coords):
         """Markiert die Nase und die Iris-Zentren mit Kreisen"""
@@ -51,7 +83,7 @@ class Overlay:
         cv2.circle(frame, indicator_pos, 4, (0, 0, 255), -1)
 
     def draw_tracking_info(self, frame, delta_x, delta_y, mouth_opening,
-                           is_calibrated, iris_dx=0.0, iris_dy=0.0):
+                           is_calibrated, iris_dx=0.0, iris_dy=0.0, fps=0.0):
         """Bestehende Text-Informationen zeichnen"""
         if not self.show_debug:
             return
@@ -66,6 +98,12 @@ class Overlay:
         cv2.putText(frame, f"Head  dX: {delta_x:.3f}  dY: {delta_y:.3f}", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 2)
         cv2.putText(frame, f"Iris  dX: {iris_dx:.4f}  dY: {iris_dy:.4f}", (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 2)
         cv2.putText(frame, f"Mouth: {mouth_opening:.3f}", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 2)
+        
+        if fps > 0:
+            fps_color = (0, 255, 0) if fps >= 24 else (0, 165, 255)
+            cv2.putText(frame, f"FPS: {fps:.1f}",
+                        (20, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, fps_color, 2)
+
 
     def draw_click_indicator(self, frame):
         h, w = frame.shape[:2]
@@ -78,3 +116,4 @@ class Overlay:
         h, w = frame.shape[:2]
         text_color = tuple(self.config.get('colors.text', [255, 255, 255]))
         cv2.putText(frame, "ESC: Beenden", (20, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 2)
+        cv2.putText(frame, "ESC: Beenden | T: Neues Target spawnen", (20, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 1)
