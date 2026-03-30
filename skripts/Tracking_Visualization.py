@@ -66,4 +66,4 @@ def plot_tracking_trace(csv_file_1, csv_file_2, screen_w=1920, screen_h=1080):
 
 if __name__ == "__main__":
     # Ersetze die Dateinamen mit deinen echten CSV-Dateien
-    plot_tracking_trace('metrics\metrics_20260330_155740.csv', 'metrics\metrics_20260330_152723.csv')
+    plot_tracking_trace('metrics\Eye_Metric.csv', 'metrics\Main_Metric.csv')

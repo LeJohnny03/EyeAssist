@@ -1,0 +1,58 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_ttt_comparison(csv_file_1, csv_file_2):
+    # Lade die CSV-Daten
+    df1 = pd.read_csv(csv_file_1)
+    df2 = pd.read_csv(csv_file_2)
+
+    # Filtere nach Klick-Events und entferne leere TTT-Werte (NaN)
+    clicks_1 = df1[(df1['event_type'] == 'click_registered') & (df1['ttt_ms'].notnull())]
+    clicks_2 = df2[(df2['event_type'] == 'click_registered') & (df2['ttt_ms'].notnull())]
+
+    # Wandle Millisekunden in Sekunden um
+    ttt_1 = clicks_1['ttt_ms'] / 1000.0
+    ttt_2 = clicks_2['ttt_ms'] / 1000.0
+
+    # Berechne Mittelwerte und Standardabweichungen
+    mean_1, std_1 = ttt_1.mean(), ttt_1.std()
+    mean_2, std_2 = ttt_2.mean(), ttt_2.std()
+
+    # Falls eine Datei keine TTT-Werte hat, Fallback auf 0 um Fehler zu vermeiden
+    if np.isnan(mean_1): mean_1, std_1 = 0, 0
+    if np.isnan(mean_2): mean_2, std_2 = 0, 0
+
+    # Plot-Setup
+    labels = ['Reines Eye-Tracking\n(Exp. 1)', 'Hybrides Head-Tracking\n(Exp. 4)']
+    means = [mean_1, mean_2]
+    stds = [std_1, std_2]
+    colors = ['#d62728', '#1f77b4']  # Rot und Blau passend zu den Tracking-Spuren
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    # Balken zeichnen (mit Fehlerbalken/Errorbars für die Standardabweichung)
+    bars = ax.bar(labels, means, yerr=stds, color=colors, capsize=10, alpha=0.8, edgecolor='black', linewidth=1.2)
+
+    # Achsen und Titel beschriften
+    ax.set_ylabel('Dauer bis zum Klick / TTT (Sekunden)', fontsize=12, fontweight='bold')
+    ax.set_title('Vergleich der durchschnittlichen Time-to-Target (TTT)', fontsize=14, fontweight='bold')
+    ax.set_ylim(0, max(means) + max(stds) + 1.5)  # Y-Achse dynamisch anpassen
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+    # Werte direkt auf/über die Balken schreiben
+    for bar in bars:
+        yval = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2, yval + 0.1, 
+                f'{yval:.2f} s', ha='center', va='bottom', fontsize=12, fontweight='bold')
+
+    plt.tight_layout()
+    
+    # Grafik in hoher Auflösung speichern
+    plt.savefig('ttt_vergleich_barchart.png', dpi=300, bbox_inches='tight')
+    plt.show()
+
+if __name__ == "__main__":
+    # Ersetze diese Dateinamen durch die echten CSV-Dateien aus deinem metrics-Ordner
+    # ACHTUNG: Die CSV-Dateien müssen Durchläufe sein, bei denen Ziele (Targets) angesteuert wurden!
+    plot_ttt_comparison('metrics\Eye_Metric.csv', 'metrics\metrics_20260330_172647.csv')
