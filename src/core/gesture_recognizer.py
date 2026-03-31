@@ -124,9 +124,9 @@ class GestureRecognizer:
         elif action == 'middle_click':
             pyautogui.middleClick()
         elif action == 'scroll_up':
-            pyautogui.scroll(1)
+            pyautogui.scroll(1000)
         elif action == 'scroll_down':
-            pyautogui.scroll(-1)
+            pyautogui.scroll(-1000)
         elif action == 'drag_toggle':
             # Toggle drag mode
             pass  # TODO: Implementiere Drag-Modus
