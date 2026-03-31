@@ -35,18 +35,20 @@ class ConfigManager:
 
             # === Maussteuerung ===
             'mouse': {
-                'sensitivity_x': 5,
-                'sensitivity_y': 6,
-                'movement_threshold': 0.002,
-                'smoothing_buffer_size': 3,
-                'invert_x': False,
-                'invert_y': False,
-                'failsafe': False,
-                'pause_duration': 0.001,
-                'min_cutoff': 1.0,
-                'beta': 0.007,
-                'd_cutoff': 1.0,
-                'pixel_deadzone': 5
+                "sensitivity_x": 8.0,
+                "sensitivity_y": 10.0,
+                "iris_sensitivity_x": 3.0,
+                "iris_sensitivity_y": 3.0,
+                "movement_threshold": 0.002,
+                "smoothing_buffer_size": 4,
+                "invert_x": False,
+                "invert_y": False,
+                "failsafe": False,
+                "pause_duration": 0.001,
+                "min_cutoff": 0.8,
+                "beta": 0.005,
+                "d_cutoff": 1.0,
+                "pixel_deadzone": 5
             },
 
             # === Gesten-Mapping ===
@@ -110,7 +112,7 @@ class ConfigManager:
 
             # === GUI / Overlay ===
             'gui': {
-                'window_name': 'Head Tracking Mouse Control',
+                'window_name': 'Hybrid Tracking Mouse Control',
                 'show_preview_window': True,
                 'preview_width': 640,
                 'preview_height': 480,
