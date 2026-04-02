@@ -14,6 +14,9 @@ class GestureMappingWindow:
         "eyebrow_raise":   "Augenbraue hochziehen",
         "head_tilt_left":  "Kopf links neigen",
         "head_tilt_right": "Kopf rechts neigen",
+        "pucker":          "Kussmund",
+        "left_eye_closed": "Linkes Auge schließen",
+        "right_eye_closed":"Rechtes Auge schließen",
     }
     ACTION_LABELS = {
         "left_click":   "Linksklick",

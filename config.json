@@ -37,9 +37,9 @@
     },
     "gesture_actions": {
         "mouth_open": {
-            "enabled": true,
+            "enabled": false,
             "action": "left_click",
-            "threshold": 0.03,
+            "threshold": 0.02,
             "cooldown_frames": 15
         },
         "mouth_wide_open": {
@@ -48,17 +48,35 @@
             "threshold": 0.05,
             "cooldown_frames": 15
         },
+        "pucker": {
+            "enabled": true,
+            "action": "left_click",
+            "threshold": 0.1,
+            "cooldown_frames": 20
+        },
         "smile": {
             "enabled": false,
-            "action": "right_click",
+            "action": "drag_toggle",
             "threshold": 0.02,
             "cooldown_frames": 20
         },
         "eyebrow_raise": {
-            "enabled": false,
-            "action": "scroll_up",
+            "enabled": true,
+            "action": "scroll_down",
             "threshold": 0.03,
             "cooldown_frames": 5
+        },
+        "left_eye_closed": {
+            "enabled": false,
+            "action": "double_click",
+            "threshold": 0.2,
+            "cooldown_frames": 20
+        },
+        "right_eye_closed": {
+            "enabled": false,
+            "action": "scroll_down",
+            "threshold": 0.2,
+            "cooldown_frames": 20
         },
         "head_tilt_left": {
             "enabled": false,
@@ -90,6 +108,15 @@
         "key_down",
         "disabled"
     ],
+    "gesture_settings": {
+        "ear_smoothing_frames": 8,
+        "pucker_ratio_threshold": 0.3,
+        "smile_asymmetry_min": 0.008,
+        "eye_open_restore_factor": 1.3,
+        "pucker_max_opening": 0.015,
+        "pucker_width_factor": 0.75,
+        "pucker_protrusion_threshold": -0.008
+    },
     "gui": {
         "window_name": "Head Tracking Mouse Control",
         "show_preview_window": true,

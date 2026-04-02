@@ -99,10 +99,15 @@ class HybridTrackingApp:
 
                 # Gesten-Erkennung (weiterhin kopfbasiert)
                 landmarks_data = {
-                    'nose_tip':       nose_tip,
-                    'upper_lip':      upper_lip,
-                    'lower_lip':      lower_lip,
-                    'reference_nose': self.calibration_wizard.get_reference_position()
+                    'nose_tip':        nose_tip,
+                    'upper_lip':       upper_lip,
+                    'lower_lip':       lower_lip,
+                    'reference_nose':  self.calibration_wizard.get_reference_position(),
+                    'mouth_metrics':   self.tracker.get_mouth_metrics(),
+                    'smile_metric':    self.tracker.get_smile_metric(),
+                    'eyebrow_metric':  self.tracker.get_eyebrow_raise_metric(),
+                    'left_ear':        self.tracker.get_left_ear(),
+                    'right_ear':       self.tracker.get_right_ear(),
                 }
 
                 actions = self.gesture_recognizer.process_gestures(landmarks_data, metrics_logger=self.metrics)
@@ -142,4 +147,5 @@ class HybridTrackingApp:
             cv2.destroyAllWindows()
             
         self.metrics.close() 
+        self.gesture_recognizer.release_all_holds()
         self.tracker.close()

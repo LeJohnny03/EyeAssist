@@ -52,63 +52,89 @@ class ConfigManager:
             },
 
             # === Gesten-Mapping ===
-            'gesture_actions': {
-                'mouth_open': {
-                    'enabled': True,
-                    'action': 'left_click',
-                    'threshold': 0.03,
-                    'cooldown_frames': 15
+            "gesture_actions": {
+                "mouth_open": {
+                    "enabled": True,
+                    "action": "left_click",
+                    "threshold": 0.03,
+                    "cooldown_frames": 15
                 },
-                'mouth_wide_open': {
-                    'enabled': False,
-                    'action': 'right_click',
-                    'threshold': 0.05,
-                    'cooldown_frames': 15
+                "mouth_wide_open": {
+                    "enabled": False,
+                    "action": "left_click",
+                    "threshold": 0.05,
+                    "cooldown_frames": 15
                 },
-                'smile': {
-                    'enabled': False,
-                    'action': 'double_click',
-                    'threshold': 0.04,
-                    'cooldown_frames': 20
+                "pucker": {
+                    "enabled": False,
+                    "action": "right_click",
+                    "threshold": 0.30,
+                    "cooldown_frames": 20
                 },
-                'eyebrow_raise': {
-                    'enabled': False,
-                    'action': 'scroll_up',
-                    'threshold': 0.02,
-                    'cooldown_frames': 5
+                "smile": {
+                    "enabled": True,
+                    "action": "right_click",
+                    "threshold": 0.02,
+                    "cooldown_frames": 20
                 },
-                'head_tilt_left': {
-                    'enabled': False,
-                    'action': 'key_left',
-                    'threshold': 0.15,
-                    'cooldown_frames': 10
+                "eyebrow_raise": {
+                    "enabled": False,
+                    "action": "scroll_up",
+                    "threshold": 0.03,
+                    "cooldown_frames": 5
                 },
-                'head_tilt_right': {
-                    'enabled': False,
-                    'action': 'key_right',
-                    'threshold': 0.15,
-                    'cooldown_frames': 10
+                "left_eye_closed": {
+                    "enabled": False,
+                    "action": "double_click",
+                    "threshold": 0.20,
+                    "cooldown_frames": 20
+                },
+                "right_eye_closed": {
+                    "enabled": False,
+                    "action": "scroll_down",
+                    "threshold": 0.20,
+                    "cooldown_frames": 20
+                },
+                "head_tilt_left": {
+                    "enabled": True,
+                    "action": "scroll_down",
+                    "threshold": 0.05,
+                    "cooldown_frames": 10
+                },
+                "head_tilt_right": {
+                    "enabled": True,
+                    "action": "scroll_up",
+                    "threshold": 0.05,
+                    "cooldown_frames": 10
                 }
             },
 
             # === Verfügbare Aktionen ===
-            'available_actions': [
-                'left_click',
-                'right_click',
-                'double_click',
-                'middle_click',
-                'scroll_up',
-                'scroll_down',
-                'drag_toggle',
-                'key_enter',
-                'key_space',
-                'key_escape',
-                'key_left',
-                'key_right',
-                'key_up',
-                'key_down',
-                'disabled'
+            "available_actions": [
+                "left_click",
+                "right_click",
+                "double_click",
+                "middle_click",
+                "multi_select_hold",
+                "scroll_up",
+                "scroll_down",
+                "drag_toggle",
+                "key_enter",
+                "key_space",
+                "key_escape",
+                "key_left",
+                "key_right",
+                "key_up",
+                "key_down",
+                "disabled"
             ],
+            
+            "gesture_settings": {
+                "ear_smoothing_frames": 5,
+                "pucker_ratio_threshold": 0.30,
+                "smile_asymmetry_min": 0.008,
+                "eye_open_restore_factor": 1.3
+            },
 
             # === GUI / Overlay ===
             'gui': {

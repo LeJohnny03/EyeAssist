@@ -153,7 +153,8 @@ class SettingsWindow:
         self.create_camera_tab(self.notebook)
         self.create_tracking_tab(self.notebook)
         self.create_calibration_tab(self.notebook)
-        self.create_gestures_tab(self.notebook)
+        self.create_gesture_settings_tab(self.notebook)
+        #self.create_gestures_tab(self.notebook)
         self.create_hotkeys_tab(self.notebook)
         self.create_general_tab(self.notebook)
 
@@ -419,7 +420,7 @@ class SettingsWindow:
         self._create_checkbox(sec2, "Fortschrittsbalken anzeigen",       "calibration.show_progress_bar",          0)
         self._create_checkbox(sec2, "Auto-Rekalibrierung bei Gesichtsverlust", "calibration.auto_recalibrate_on_face_lost", 1)
 
-    def create_gestures_tab(self, notebook):
+    """def create_gestures_tab(self, notebook):
         f = self._scrollable_frame(notebook, "✋  Gesten")
 
         available_actions = self.config.get("available_actions") or [
@@ -470,7 +471,8 @@ class SettingsWindow:
                                 0.01, 0.2, 0.005, 2)
             # Cooldown
             self._create_slider(sec, "Cooldown (Frames):", f"gesture_actions.{g_key}.cooldown_frames",
-                                1, 60, 1, 3, use_int=True)
+                                1, 60, 1, 3, use_int=True)"""
+                                
 
     def create_hotkeys_tab(self, notebook):
         f = self._scrollable_frame(notebook, "⌨  Hotkeys")
@@ -484,6 +486,25 @@ class SettingsWindow:
         ]
         for i, (key, label) in enumerate(hotkeys):
             self._create_entry(sec, label, key, i, width=8)
+            
+    def create_gesture_settings_tab(self, notebook):
+        f = self._scrollable_frame(notebook, "🔧  Gesten-Engine")
+
+        sec = self._section(f, "Erkennungs-Parameter")
+        self._create_slider(sec, "EAR Glättungs-Frames:",
+                            "gesture_settings.ear_smoothing_frames",
+                            1, 15, 1, 0, use_int=True,
+                            hint="Mehr = stabiler, träger")
+        self._create_slider(sec, "Kussmund Ratio-Schwelle:",
+                            "gesture_settings.pucker_ratio_threshold",
+                            0.1, 1.0, 0.05, 1)
+        self._create_slider(sec, "Lächeln Mindest-Asymmetrie:",
+                            "gesture_settings.smile_asymmetry_min",
+                            0.001, 0.05, 0.001, 2)
+        self._create_slider(sec, "Auge-Offen Restore-Faktor:",
+                            "gesture_settings.eye_open_restore_factor",
+                            1.0, 2.0, 0.1, 3,
+                            hint="EAR-Schwelle × Faktor = Wiedereröffnung")
 
     def create_general_tab(self, notebook):
         f = self._scrollable_frame(notebook, "⚙  Allgemein")
