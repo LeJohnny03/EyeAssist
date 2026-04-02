@@ -81,6 +81,21 @@ class HybridTrackingApp:
 
             # Iris-Delta (Feinjustierung) – relativ zum Augenmittelpunkt im aktuellen Frame
             iris_dx, iris_dy = self.tracker.get_iris_delta()
+            
+            mouth_left, mouth_right = self.tracker.get_mouth_corners()
+            mouth_width             = self.tracker.get_mouth_width()
+            eye_roll_angle          = self.tracker.get_eye_roll_angle()
+            
+            # Landmarks für Smile-Erkennung
+            left_eye_outer  = self.tracker.get_landmark_position(33)
+            right_eye_outer = self.tracker.get_landmark_position(263)
+            face_width = abs(right_eye_outer[0] - left_eye_outer[0]) if left_eye_outer and right_eye_outer else None
+
+            # Landmarks für Augenbrauen-Erkennung
+            left_eyebrow   = self.tracker.get_landmark_position(65)   # Linke Augenbraue Mitte
+            left_eye_top   = self.tracker.get_landmark_position(159)  # Linkes Oberlid Mitte
+            right_eyebrow  = self.tracker.get_landmark_position(295)  # Rechte Augenbraue Mitte
+            right_eye_top  = self.tracker.get_landmark_position(386)  # Rechtes Oberlid Mitte
 
             # Kalibrierung – ausschließlich auf Kopfposition (Nase)
             if not self.calibration_wizard.is_complete:
@@ -102,6 +117,15 @@ class HybridTrackingApp:
                     'nose_tip':       nose_tip,
                     'upper_lip':      upper_lip,
                     'lower_lip':      lower_lip,
+                    'mouth_left':     mouth_left,
+                    'mouth_right':    mouth_right,
+                    'mouth_width':    mouth_width,
+                    'eye_roll_angle': eye_roll_angle,
+                    'face_width':     face_width,
+                    'left_eyebrow':   left_eyebrow,
+                    'left_eye_top':   left_eye_top,
+                    'right_eyebrow':  right_eyebrow,
+                    'right_eye_top':  right_eye_top,
                     'reference_nose': self.calibration_wizard.get_reference_position()
                 }
 

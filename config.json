@@ -30,10 +30,10 @@
         "invert_y": false,
         "failsafe": false,
         "pause_duration": 0.001,
-        "min_cutoff": 0.5,
-        "beta": 0.003,
+        "min_cutoff": 0.8,
+        "beta": 0.005,
         "d_cutoff": 1.0,
-        "pixel_deadzone": 8
+        "pixel_deadzone": 5
     },
     "gesture_actions": {
         "mouth_open": {
@@ -42,35 +42,41 @@
             "threshold": 0.03,
             "cooldown_frames": 15
         },
-        "mouth_wide_open": {
+        "puckered_mouth": {
             "enabled": false,
-            "action": "left_click",
-            "threshold": 0.05,
-            "cooldown_frames": 15
+            "action": "right_click",
+            "threshold": 0.2,
+            "cooldown_frames": 20
         },
         "smile": {
             "enabled": false,
-            "action": "right_click",
-            "threshold": 0.02,
+            "action": "double_click",
+            "threshold": 0.2,
             "cooldown_frames": 20
         },
         "eyebrow_raise": {
             "enabled": false,
             "action": "scroll_up",
-            "threshold": 0.03,
-            "cooldown_frames": 5
+            "threshold": 0.035,
+            "cooldown_frames": 20
         },
         "head_tilt_left": {
             "enabled": false,
             "action": "scroll_down",
-            "threshold": 0.05,
-            "cooldown_frames": 10
+            "threshold": 0.2,
+            "cooldown_frames": 30
         },
         "head_tilt_right": {
             "enabled": false,
             "action": "scroll_up",
-            "threshold": 0.05,
-            "cooldown_frames": 10
+            "threshold": 0.2,
+            "cooldown_frames": 30
+        },
+        "mouth_wide_open": {
+            "enabled": false,
+            "action": "disabled",
+            "threshold": 0.01,
+            "cooldown_frames": 1
         }
     },
     "available_actions": [
@@ -91,7 +97,7 @@
         "disabled"
     ],
     "gui": {
-        "window_name": "Head Tracking Mouse Control",
+        "window_name": "Hybrid Tracking Mouse Control",
         "show_preview_window": true,
         "preview_width": 640,
         "preview_height": 480,
@@ -99,7 +105,7 @@
         "show_landmarks": true,
         "show_fps": true,
         "show_controls_hint": true,
-        "theme": "dark"
+        "theme": "light"
     },
     "colors": {
         "calibrating": [

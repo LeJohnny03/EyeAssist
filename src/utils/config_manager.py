@@ -53,41 +53,42 @@ class ConfigManager:
 
             # === Gesten-Mapping ===
             'gesture_actions': {
-                'mouth_open': {
-                    'enabled': True,
-                    'action': 'left_click',
-                    'threshold': 0.03,
-                    'cooldown_frames': 15
+                "mouth_open": {
+                    "enabled": True,
+                    "action": "left_click",
+                    "threshold": 0.03,
+                    "cooldown_frames": 15,
+                    "drag_hold_seconds": 0.8
                 },
-                'mouth_wide_open': {
-                    'enabled': False,
-                    'action': 'right_click',
-                    'threshold': 0.05,
-                    'cooldown_frames': 15
+                "puckered_mouth": {
+                    "enabled": False,
+                    "action": "right_click",
+                    "threshold": 0.20,
+                    "cooldown_frames": 20
                 },
-                'smile': {
-                    'enabled': False,
-                    'action': 'double_click',
-                    'threshold': 0.04,
-                    'cooldown_frames': 20
+                "smile": {
+                    "enabled": False,
+                    "action": "double_click",
+                    "threshold": 0.20,
+                    "cooldown_frames": 20
                 },
-                'eyebrow_raise': {
-                    'enabled': False,
-                    'action': 'scroll_up',
-                    'threshold': 0.02,
-                    'cooldown_frames': 5
+                "eyebrow_raise": {
+                    "enabled": False,
+                    "action": "scroll_up",
+                    "threshold": 0.035,
+                    "cooldown_frames": 20
                 },
-                'head_tilt_left': {
-                    'enabled': False,
-                    'action': 'key_left',
-                    'threshold': 0.15,
-                    'cooldown_frames': 10
+                "head_tilt_left": {
+                    "enabled": False,
+                    "action": "scroll_down",
+                    "threshold": 10.0,
+                    "cooldown_frames": 30
                 },
-                'head_tilt_right': {
-                    'enabled': False,
-                    'action': 'key_right',
-                    'threshold': 0.15,
-                    'cooldown_frames': 10
+                "head_tilt_right": {
+                    "enabled": False,
+                    "action": "scroll_up",
+                    "threshold": 10.0,
+                    "cooldown_frames": 30
                 }
             },
 

@@ -5,6 +5,15 @@ den Mauszeiger ausschließlich durch Kopf- und Augenbewegungen zu steuern.
 Die Steuerung erfolgt kamerabasiert mittels MediaPipe Face Mesh – ohne
 zusätzliche Hardware.
 
+HINWEIS: Gesten außerhalb vom Mund öffnen und Augenbrauen hochziehen funktionieren unzuverlässig.
+Die Entwicklung fokussierte sich primär auf die Angenehme Kontrolle der Maus. 
+Die Gesten werden mit einem zukünftigen Update noch drastisch verbessert.
+Außerdem ist ein Hilfssystem geplant, bei dem Klickflächen in der Nähe des Mauszeigers vergrößert werden und somit leichter anzusteuern sind.
+Eine eigenes Tastatur-Overlay ist auch geplant um Schreiben zu können.
+Außerdem soll die Systemmaus in Zukunft durch einen eigenen Mauszeiger ersetzt werden, der Größer ist und smoothing algortihmen beinhalten soll, damit die Steuerung noch mal verbessert wird.
+
+Ein großes Vorbild für diese Anwendung ist Sensepilot: https://sensepilot.tech/
+
 ---
 
 ## Funktionsübersicht

@@ -1,4 +1,6 @@
 """MediaPipe Face Mesh Tracking Engine"""
+import math
+
 import cv2
 import mediapipe as mp
 
@@ -11,6 +13,14 @@ class TrackerEngine:
     LEFT_EYE_OUTER   = 33
     RIGHT_EYE_INNER  = 362
     RIGHT_EYE_OUTER  = 263
+    
+    # Mundwinkel für Breite des Mundes
+    MOUTH_LEFT  = 61
+    MOUTH_RIGHT = 291
+    
+    # Obere/Untere Lippenkontur für Puckered-Erkennung
+    UPPER_LIP_TOP    = 0    # Mitte Oberlippe außen
+    LOWER_LIP_BOTTOM = 17   # Mitte Unterlippe außen
 
     def __init__(self, config):
         self.config = config
@@ -61,6 +71,37 @@ class TrackerEngine:
     def get_lower_lip(self):
         """Gibt untere Lippen-Position zurück (Landmark 14)"""
         return self.get_landmark_position(14)
+    
+    def get_mouth_corners(self):
+        """Gibt linken und rechten Mundwinkel zurück"""
+        left  = self.get_landmark_position(self.MOUTH_LEFT)
+        right = self.get_landmark_position(self.MOUTH_RIGHT)
+        return left, right
+    
+    def get_mouth_width(self):
+        """
+        Gibt die normalisierte Mundbreite zurück.
+        Bei normalem Mund ~0.04–0.06, bei gespitzten Lippen deutlich kleiner.
+        """
+        left, right = self.get_mouth_corners()
+        if left is None or right is None:
+            return None
+        return abs(right[0] - left[0])
+    
+    def get_eye_roll_angle(self):
+        """
+        Berechnet den Roll-Winkel (echte Kopfneigung) aus der Verbindungslinie
+        beider äußerer Augenwinkel. Gibt Winkel in Grad zurück.
+        Positiv = Kopf nach rechts geneigt, Negativ = nach links geneigt.
+        """
+        left_outer  = self.get_landmark_position(self.LEFT_EYE_OUTER)
+        right_outer = self.get_landmark_position(self.RIGHT_EYE_OUTER)
+        if left_outer is None or right_outer is None:
+            return 0.0
+        dx = right_outer[0] - left_outer[0]
+        dy = right_outer[1] - left_outer[1]
+        angle_rad = math.atan2(dy, dx)
+        return math.degrees(angle_rad)
 
     def get_iris_delta(self):
         """
